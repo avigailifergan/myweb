@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'motion/react';
 import { 
   Music, 
   Mic2, 
   Video, 
-  Instagram, 
-  Facebook, 
   Phone, 
   Mail, 
   Menu, 
@@ -14,8 +12,38 @@ import {
   Play,
   Pause,
   ArrowLeft,
-  MessageCircle
+  MessageCircle,
+  Sparkles,
 } from 'lucide-react';
+
+const SharedGradients = () => (
+  <svg width="0" height="0" className="absolute">
+    <defs>
+      <linearGradient id="instagram-gradient-global" x1="0%" y1="100%" x2="100%" y2="0%">
+        <stop offset="0%" style={{ stopColor: '#f09433' }} />
+        <stop offset="25%" style={{ stopColor: '#e6683c' }} />
+        <stop offset="50%" style={{ stopColor: '#dc2743' }} />
+        <stop offset="75%" style={{ stopColor: '#cc2366' }} />
+        <stop offset="100%" style={{ stopColor: '#bc1888' }} />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+const InstagramIcon = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 24 24" className={className}>
+    <path fill="url(#instagram-gradient-global)" d="M16 3H8c-2.76 0-5 2.24-5 5v8c0 2.76 2.24 5 5 5h8c2.76 0 5-2.24 5-5V8c0-2.76-2.24-5-5-5zm3 13c0 1.66-1.34 3-3 3H8c-1.66 0-3-1.34-3-3V8c0-1.66 1.34-3 3-3h8c1.66 0 3 1.34 3 3v8z"/>
+    <path fill="url(#instagram-gradient-global)" d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
+    <circle fill="url(#instagram-gradient-global)" cx="17.5" cy="6.5" r="1.5"/>
+  </svg>
+);
+
+const FacebookIcon = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 24 24" className={className}>
+    <circle cx="12" cy="12" r="12" fill="#1877F2" />
+    <path fill="white" d="M15.12 12.073h-2.087v8.385H9.563v-8.385H7.953v-2.953h1.61V7.123c0-1.597.758-4.093 4.093-4.093l3.003.013v2.868h-2.178c-.347 0-.834.173-.834.912v2.3h3.045l-.417 2.95z" />
+  </svg>
+);
 
 const IMAGES = {
   singing: "https://lh3.googleusercontent.com/aida/ADBb0uijsMBTt-xnDpP9tOBxYUS0zZ7HlebiGrGa6plLUkFZVwZixCdWdSoqekARRhC9wvUWCOInlUU6T9MZopACwrcdIWuW9qY0cIknJXmEfoLTKfFOBNgFnLcizFuSUjeEsRQB-XiGYMXnmPcR9gynopwJRUSytbVtJC-W-IhTGzfIxc3tHx769q34tCTbK3UPsuxuaY6hGlM8q-mZ0Yxfr9bl-GXTSieWyjkRCFsgIv0dQXSReOlcGEtMX88F4Uf_BOwDYDpzD6nqv8o",
@@ -31,7 +59,7 @@ const SECTIONS = [
   { id: 'contact', title: 'צור קשר', icon: <Phone className="w-5 h-5" /> },
 ];
 
-const AudioPlayerItem = ({ title, src, duration }: { title: string, src: string, duration?: string }) => {
+const AudioPlayerItem: React.FC<{ title: string, src: string, duration?: string }> = ({ title, src, duration }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = React.useRef<HTMLAudioElement>(null);
 
@@ -51,14 +79,25 @@ const AudioPlayerItem = ({ title, src, duration }: { title: string, src: string,
   };
 
   return (
-    <div className="flex items-center justify-between p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all cursor-pointer group" onClick={togglePlay}>
-      <div className="flex items-center gap-5">
-        <div className="w-12 h-12 rounded-full bg-lilac-500/50 flex items-center justify-center group-hover:bg-lilac-500 transition-colors">
-          {isPlaying ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" />}
+    <div 
+      className={`rounded-2xl p-5 transition-all relative overflow-hidden group shadow-lg ${
+        isPlaying ? 'bg-gradient-to-r from-[#D4AF37] to-[#FDE047] scale-[1.01]' : 'bg-[#FDE047]/90 hover:bg-[#FDE047]'
+      }`}
+    >
+      <div className="flex items-center justify-between relative z-10 gap-4">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={togglePlay}
+            className="w-12 h-12 rounded-full bg-black/10 flex items-center justify-center hover:bg-black/20 transition-colors"
+          >
+            {isPlaying ? <Pause size={20} className="text-black" /> : <Play size={20} className="text-black ml-1" />}
+          </button>
+          <div className="text-right">
+            <h4 className="font-body font-medium text-lg text-black/80">{title}</h4>
+          </div>
         </div>
-        <span className="font-body font-medium text-lg">{title}</span>
+        <div className="text-black/40 font-mono text-sm">{duration}</div>
       </div>
-      <span className="text-sm text-lilac-300 font-body">{duration}</span>
       <audio 
         ref={audioRef} 
         src={src} 
@@ -73,6 +112,16 @@ const AudioPlayerItem = ({ title, src, duration }: { title: string, src: string,
 const App: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
+  const backgroundY1 = useTransform(scrollYProgress, [0, 1], [0, -100]);
+  const backgroundY2 = useTransform(scrollYProgress, [0, 1], [0, 100]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -90,6 +139,29 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen font-body text-lilac-900 bg-lilac-50 selection:bg-lilac-200 overflow-x-hidden" dir="rtl">
+      <SharedGradients />
+      
+      {/* Scroll Progress Bar */}
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#D4AF37] to-[#FDE047] origin-right z-[100]"
+        style={{ scaleX }}
+      />
+      
+      {/* Background Decor with Parallax */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <motion.div 
+          style={{ y: backgroundY1 }}
+          className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-lilac-400/10 rounded-full blur-[120px]" 
+        />
+        <motion.div 
+          style={{ y: backgroundY2 }}
+          className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-yellow-400/5 rounded-full blur-[100px]" 
+        />
+        <motion.div 
+          style={{ y: backgroundY1 }}
+          className="absolute bottom-[-10%] left-[20%] w-[60%] h-[60%] bg-lilac-600/5 rounded-full blur-[150px]" 
+        />
+      </div>
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'py-3' : 'py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-center items-center">
@@ -112,18 +184,7 @@ const App: React.FC = () => {
                 className="hover:scale-110 transition-transform"
                 title="Instagram"
               >
-                <svg viewBox="0 0 24 24" className="w-6 h-6">
-                  <defs>
-                    <linearGradient id="instagram-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" style={{ stopColor: '#f09433' }} />
-                      <stop offset="25%" style={{ stopColor: '#e6683c' }} />
-                      <stop offset="50%" style={{ stopColor: '#dc2743' }} />
-                      <stop offset="75%" style={{ stopColor: '#cc2366' }} />
-                      <stop offset="100%" style={{ stopColor: '#bc1888' }} />
-                    </linearGradient>
-                  </defs>
-                  <path fill="url(#instagram-gradient)" d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.332 3.608 1.308.975.975 1.245 2.242 1.308 3.608.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.062 1.366-.332 2.633-1.308 3.608-.975.975-2.242 1.245-3.608 1.308-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.366-.062-2.633-.332-3.608-1.308-.975-.975-1.245-2.242-1.308-3.608-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.062-1.366.332-2.633 1.308-3.608.975-.975 2.242-1.245 3.608-1.308 1.266-.058 1.646-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-1.277.057-2.148.258-2.911.556-.788.306-1.457.715-2.123 1.381s-1.075 1.335-1.381 2.123c-.298.763-.499 1.634-.556 2.911-.058 1.28-.072 1.688-.072 4.947s.014 3.667.072 4.947c.057 1.277.258 2.148.556 2.911.306.788.715 1.457 1.381 2.123s1.335 1.075 2.123 1.381c.763.298 1.634.499 2.911.556 1.28.058 1.688.072 4.947.072s3.667-.014 4.947-.072c1.277-.057 2.148-.258 2.911-.556.788-.306 1.457-.715 2.123-1.381s1.075-1.335 1.381-2.123c.298-.763.499-1.634.556-2.911.058-1.28.072-1.688.072-4.947s-.014-3.667-.072-4.947c-.057-1.277-.258-2.148-.556-2.911-.306-.788-.715-1.457-1.381-2.123s-1.335-1.075-2.123-1.381c-.763-.298-1.634-.499-2.911-.556-1.28-.058-1.688-.072-4.947-.072zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                </svg>
+                <InstagramIcon className="w-6 h-6" />
               </a>
               <a 
                 href="https://www.facebook.com/avigail.ifergan/" 
@@ -132,9 +193,7 @@ const App: React.FC = () => {
                 className="hover:scale-110 transition-transform"
                 title="Facebook"
               >
-                <svg viewBox="0 0 24 24" className="w-6 h-6">
-                  <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
+                <FacebookIcon className="w-6 h-6" />
               </a>
             </div>
           </div>
@@ -174,10 +233,10 @@ const App: React.FC = () => {
       </AnimatePresence>
 
       {/* Hero Section */}
-      <header className="relative h-screen flex items-end justify-center pb-20 overflow-hidden">
+      <header className="relative h-screen flex flex-col justify-between md:justify-end items-center pt-16 md:pt-0 pb-20 overflow-hidden">
         <div className="absolute inset-0 z-0 flex">
-          {/* Left Image (Image 3) */}
-          <div className="w-1/3 h-full relative">
+          {/* Left Image (Image 3) - Desktop Only */}
+          <div className="hidden md:block w-1/3 h-full relative">
             <img 
               src={IMAGES.trumpet} 
               alt="" 
@@ -185,39 +244,49 @@ const App: React.FC = () => {
               referrerPolicy="no-referrer"
             />
           </div>
-          {/* Middle Image (Image 2) */}
-          <div className="w-1/3 h-full relative">
+          {/* Middle Image (Image 2) - Full on Mobile, 1/3 on Desktop */}
+          <div className="w-full md:w-1/3 h-full relative">
             <img 
               src={IMAGES.portrait} 
               alt="" 
-              className="w-full h-full object-cover opacity-50"
+              className="w-full h-full object-cover opacity-60 md:opacity-50"
               referrerPolicy="no-referrer"
             />
           </div>
-          {/* Right Image (Image 1 - Cropped Top) */}
-          <div className="w-1/3 h-full relative">
+          {/* Right Image (Image 1) - Desktop Only */}
+          <div className="hidden md:block w-1/3 h-full relative">
             <img 
               src={IMAGES.singing} 
               alt="" 
-              className="w-full h-full object-cover object-bottom opacity-30"
+              className="w-full h-full object-cover object-bottom opacity-30 scale-x-[-1]"
               referrerPolicy="no-referrer"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-b from-lilac-50/20 via-transparent to-lilac-50"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-lilac-50/10 via-lilac-50/40 to-lilac-50/90 md:from-lilac-50/20 md:via-transparent md:to-lilac-50"></div>
         </div>
 
-        <div className="relative z-10 text-center px-6 max-w-4xl">
+        {/* Name and Line - Top on mobile, near bottom on desktop */}
+        <div className="relative z-10 text-center px-6 max-w-4xl pt-8 md:pt-0 md:mb-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-7xl font-headline font-extralight mb-4 tracking-[0.15em] text-lilac-900">
-              אביגיל איפרגן
+            <h1 className="text-5xl md:text-7xl font-headline font-light mb-4 tracking-[0.15em] text-lilac-950 drop-shadow-sm">
+              אביגיל <br className="md:hidden" /> איפרגן
             </h1>
+            <div className="h-[2px] w-48 bg-[#FDE047] mx-auto shadow-sm"></div>
+          </motion.div>
+        </div>
 
-            <div className="h-[1px] w-48 bg-[#FDE047] mx-auto mb-6"></div>
-            <div className="inline-block px-6 py-3 bg-white/60 backdrop-blur-md rounded-2xl border border-white/20 shadow-sm mb-12">
+        {/* Subtext - At the bottom on both */}
+        <div className="relative z-10 text-center px-6 max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, filter: 'blur(8px)', y: 20 }}
+            animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <div className="inline-block px-6 py-3 bg-white/60 backdrop-blur-md rounded-2xl border border-white/20 shadow-sm mb-7 md:mb-12">
               <p className="text-lg md:text-2xl font-body font-light text-lilac-700 tracking-[0.1em]">
                 מוסיקאית • שחקנית • מפיקה
               </p>
@@ -240,9 +309,10 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-20 items-center">
             <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 0, filter: 'blur(12px)', y: 60 }}
+              whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
               className="text-center"
             >
               <h2 className="text-5xl md:text-6xl font-headline font-light mb-6 text-lilac-900 leading-tight">שירה לכל אירוע</h2>
@@ -252,9 +322,10 @@ const App: React.FC = () => {
               </p>
             </motion.div>
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 0, filter: 'blur(10px)', y: 30 }}
+              whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
               className="relative"
             >
               <div className="aspect-[4/5] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-lilac-200 bg-black">
@@ -277,13 +348,14 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-20 items-stretch mb-24">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 0, filter: 'blur(12px)', y: 60 }}
+              whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
               className="order-2 md:order-1"
             >
               {/* Make square and larger */}
-              <div className="aspect-square max-w-xl mx-auto rounded-[2rem] overflow-hidden shadow-2xl relative group border-4 border-lilac-200 bg-black">
+              <div className="aspect-square max-w-xl mx-auto rounded-[2rem] overflow-hidden shadow-2xl relative group border-[6px] border-[#D4AF37] bg-black">
                 <iframe
                   src="https://www.youtube.com/embed/8hdDD3caMuQ"
                   title="חצוצרה אמנותית והרכבי תנועה"
@@ -294,9 +366,10 @@ const App: React.FC = () => {
               </div>
             </motion.div>
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 0, filter: 'blur(8px)', x: -50 }}
+              whileInView={{ opacity: 1, filter: 'blur(0px)', x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
               className="order-1 md:order-2 flex flex-col text-center"
             >
               <h2 className="text-5xl md:text-6xl font-headline font-light mb-6 text-lilac-900 leading-tight">חצוצרה אמנותית והרכבי תנועה</h2>
@@ -305,19 +378,49 @@ const App: React.FC = () => {
                 חוויה ויזואלית ומוסיקלית יוצאת דופן לאירועי יוקרה. הרכבי תנועה אמנותיים המשלבים נגינה חיה בחצוצרה, כוריאוגרפיה מוקפדת ותלבושות מרהיבות, המעניקים לאירוע נופך של אלגנטיות וחדשנות.
               </p>
               
-              {/* Spotify Embed - Square and larger */}
-              <div className="mt-auto pt-10 max-w-md">
-                <iframe 
-                  data-testid="embed-iframe" 
-                  style={{ borderRadius: '12px' }} 
-                  src="https://open.spotify.com/embed/track/6lcN1FC6PoiCvkq5om9G4o?utm_source=generator" 
-                  width="100%" 
-                  height="352" 
-                  frameBorder="0" 
-                  allowFullScreen 
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                  loading="lazy"
-                ></iframe>
+              {/* Spotify Embed - Premium Frame (White/Silvery Version) */}
+              <div className="mt-auto pt-12 max-w-md w-full">
+                <div className="relative group/spotify">
+                  {/* Outer Glow - White/Lilac instead of Gold */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-white/30 to-lilac-300/30 rounded-[1.8rem] blur-md opacity-20 group-hover/spotify:opacity-40 transition-opacity duration-500"></div>
+                  
+                  {/* Main Container with Padding for the 'Frame' shine */}
+                  <div className="relative border-2 border-white/40 rounded-[1.8rem] p-3 bg-white/10 backdrop-blur-xl shadow-2xl overflow-hidden">
+                    {/* Animated Shine Effect - constrained to the frame padding area by the opaque inner div */}
+                    <motion.div 
+                      animate={{ 
+                        x: ['-200%', '200%'],
+                      }}
+                      transition={{ 
+                        duration: 4, 
+                        repeat: Infinity, 
+                        ease: "linear",
+                        repeatDelay: 2
+                      }}
+                      className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-25deg] pointer-events-none z-0"
+                    />
+
+                    {/* Decorative Sparkle - White instead of Gold */}
+                    <div className="absolute top-2 left-2 animate-pulse z-20">
+                      <Sparkles size={16} className="text-white" />
+                    </div>
+                    
+                    {/* Opaque Inner Wrapper for the Iframe to block the shine */}
+                    <div className="relative z-10 rounded-[13px] overflow-hidden bg-[#121212]">
+                      <iframe 
+                        data-testid="embed-iframe" 
+                        style={{ borderRadius: '12px', display: 'block' }} 
+                        src="https://open.spotify.com/embed/track/6lcN1FC6PoiCvkq5om9G4o?utm_source=generator" 
+                        width="100%" 
+                        height="352" 
+                        frameBorder="0" 
+                        allowFullScreen 
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                        loading="lazy"
+                      ></iframe>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -326,9 +429,10 @@ const App: React.FC = () => {
           <div className="text-center mb-12">
           </div>
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            initial={{ opacity: 0, filter: 'blur(10px)', y: 30 }}
+            whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
             className="grid grid-cols-1 md:grid-cols-3 gap-2 max-w-[1800px] mx-auto px-4"
           >
             {[
@@ -336,7 +440,7 @@ const App: React.FC = () => {
               { id: '7wT_hmpmTcg', title: 'אביגיל איפרגן' },
               { id: 'DMwOfwmBBmY', title: 'אביגיל איפרגן' }
             ].map((video, i) => (
-              <div key={i} className="aspect-video bg-black rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all relative border border-lilac-100">
+              <div key={i} className="aspect-video bg-black rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all relative border-4 border-[#D4AF37]">
                 <iframe
                   src={`https://www.youtube.com/embed/${video.id}?modestbranding=1&rel=0&showinfo=0`}
                   title={video.title}
@@ -354,9 +458,10 @@ const App: React.FC = () => {
       <section id="acting" className="py-32 px-6 bg-white">
         <div className="max-w-6xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            initial={{ opacity: 0, filter: 'blur(12px)', y: 60 }}
+            whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
           >
             <h2 className="text-5xl md:text-6xl font-headline font-light mb-6 text-lilac-900">משחק ותדמית לעסקים</h2>
             <div className="h-[1px] w-48 bg-[#FDE047] mx-auto mb-10"></div>
@@ -364,7 +469,7 @@ const App: React.FC = () => {
               שירותי משחק מקצועיים לסרטי תדמית, פרסומות והפקות וידאו. בניית דמות המעבירה את המסר העסקי בצורה מדויקת, אמינה ומרשימה.
             </p>
             <div className="mb-16 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-black rounded-3xl overflow-hidden shadow-xl border-2 border-lilac-50 aspect-video w-full">
+              <div className="bg-black rounded-3xl overflow-hidden shadow-xl border-4 border-[#D4AF37] aspect-video w-full">
                 <iframe
                   src="https://www.youtube.com/embed/EU5siooDAwc?modestbranding=1&rel=0"
                   title="משחק ותדמית - סרטון 1"
@@ -373,7 +478,7 @@ const App: React.FC = () => {
                   allowFullScreen
                 ></iframe>
               </div>
-              <div className="bg-black rounded-3xl overflow-hidden shadow-xl border-2 border-lilac-50 aspect-video w-full">
+              <div className="bg-black rounded-3xl overflow-hidden shadow-xl border-4 border-[#D4AF37] aspect-video w-full">
                 <iframe
                   src="https://www.youtube.com/embed/5nLVGvhtgq4?modestbranding=1&rel=0"
                   title="משחק ותדמית - סרטון 2"
@@ -392,7 +497,7 @@ const App: React.FC = () => {
               ].map((video, i) => (
                 <div 
                   key={i} 
-                  className="bg-black rounded-3xl overflow-hidden shadow-xl border-2 border-lilac-50 aspect-[9/16] max-w-[280px] mx-auto w-full"
+                  className="bg-black rounded-3xl overflow-hidden shadow-xl border-4 border-[#D4AF37] aspect-[9/16] max-w-[280px] mx-auto w-full"
                 >
                   <iframe
                     src={`https://www.youtube.com/embed/${video.id}?modestbranding=1&rel=0`}
@@ -418,9 +523,10 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid md:grid-cols-2 gap-16 items-start">
             <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 0, filter: 'blur(12px)', y: 60 }}
+              whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
               className="text-center"
             >
               <h2 className="text-5xl md:text-6xl font-headline font-light mb-6 leading-tight">קריינות ומוסיקה לפרסומות</h2>
@@ -428,23 +534,24 @@ const App: React.FC = () => {
               <p className="text-xl text-lilac-100 leading-relaxed mb-10 font-body font-light max-w-2xl mx-auto">
                 הקלטות קריינות מקצועיות למגוון מדיות - רדיו, טלוויזיה, דיגיטל ומערכות טלפוניה. יצירת מוסיקה מקורית וג'ינגלים המותאמים אישית למותג שלך, המעניקים לו זהות קולית ייחודית וזכירה.
               </p>
-              <div className="space-y-5">
+              <div className="space-y-4 max-w-md mx-auto">
                 {[
                   { title: 'פרפרים - מתוך המופע של אודיה', duration: '0:30', src: '/audio/פרפרים - מתוך המופע של אודיה.wav' },
                   { title: 'Palace דיור מוגן - קריינות', duration: '0:15', src: '/audio/Palace דיור מוגן - קריינות.mp3' },
-                  { title: 'קריינות להשתלמות עובדים', duration: '1:20', src: '/audio/קריינות להשתלמות עובדים.wav' },
+                  { title: 'Web Academix - קריינות', duration: '1:20', src: '/audio/קריינות להשתלמות עובדים.wav' },
                 ].map((track, idx) => (
                   <AudioPlayerItem key={idx} title={track.title} duration={track.duration} src={track.src} />
                 ))}
               </div>
             </motion.div>
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 0, filter: 'blur(10px)', scale: 0.9 }}
+              whileInView={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
               className="relative pt-12 md:pt-20"
             >
-              <div className="w-full aspect-video rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.4)] border-4 border-white/10 bg-black scale-110 origin-top">
+              <div className="w-full aspect-video rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.4)] border-[6px] border-white bg-black origin-top">
                 <iframe
                   src="https://www.youtube.com/embed/KvvsnMuVZKM?modestbranding=1&rel=0"
                   title="קריינות ומוסיקה לפרסומות"
@@ -460,91 +567,97 @@ const App: React.FC = () => {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-32 px-6 bg-white">
+      <section id="contact" className="py-20 md:py-32 px-4 md:px-6 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-lilac-50/50 rounded-[4rem] p-12 md:p-24 overflow-hidden relative border border-lilac-100">
-            <div className="grid md:grid-cols-2 gap-20 relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, filter: 'blur(10px)', y: 40 }}
+          whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+          className="bg-lilac-50/50 rounded-[2rem] md:rounded-[4rem] p-8 md:p-24 overflow-hidden relative border border-lilac-100"
+        >
+            <div className="grid md:grid-cols-2 gap-12 md:gap-20 relative z-10">
               <div>
-                <h2 className="text-5xl md:text-6xl font-headline font-light mb-10 text-lilac-900 leading-tight">בואו ניצור משהו מופלא יחד</h2>
-                <p className="text-xl text-lilac-700 mb-12 font-body font-light">
+                <h2 className="text-4xl md:text-6xl font-headline font-light mb-6 md:mb-10 text-lilac-900 leading-tight text-center md:text-right">בואו ניצור משהו מופלא יחד</h2>
+                <p className="text-lg md:text-xl text-lilac-700 mb-8 md:mb-12 font-body font-light text-center md:text-right">
                   זמינה לשיתופי פעולה, הופעות ופרויקטים אמנותיים. צרו קשר לתיאום פגישה או לקבלת הצעת מחיר מותאמת אישית.
                 </p>
                 
-                <div className="space-y-8">
-                  <a href="tel:+972504331354" className="flex items-center gap-8 group">
-                    <div className="w-16 h-16 rounded-[1.5rem] bg-white flex items-center justify-center text-lilac-600 shadow-sm group-hover:bg-lilac-600 group-hover:text-white transition-all">
-                      <Phone size={28} />
+                <div className="space-y-6 md:space-y-8">
+                  <a href="tel:+972504331354" className="flex items-center gap-5 md:gap-8 group">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1rem] md:rounded-[1.5rem] bg-white flex items-center justify-center text-lilac-600 shadow-sm group-hover:bg-lilac-600 group-hover:text-white transition-all">
+                      <Phone size={24} className="md:w-7 md:h-7" />
                     </div>
-                    <div>
-                      <span className="block text-xs text-lilac-400 uppercase tracking-[0.2em] mb-1">טלפון</span>
-                      <span className="text-2xl font-body font-medium">050-4331354</span>
+                    <div className="flex-1">
+                      <span className="inline-block bg-white/40 backdrop-blur-md px-3 py-1 rounded-lg border border-white/20 text-sm md:text-base text-lilac-600 font-medium uppercase tracking-[0.15em] mb-1">טלפון</span>
+                      <span className="block text-xl md:text-2xl font-body font-medium text-lilac-900 mt-1">050-4331354</span>
                     </div>
                   </a>
                   
-                  <a href="mailto:avigailifergan@gmail.com" className="flex items-center gap-8 group">
-                    <div className="w-16 h-16 rounded-[1.5rem] bg-white flex items-center justify-center text-lilac-600 shadow-sm group-hover:bg-lilac-600 group-hover:text-white transition-all">
-                      <Mail size={28} />
+                  <a href="mailto:avigailifergan@gmail.com" className="flex items-center gap-5 md:gap-8 group">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1rem] md:rounded-[1.5rem] bg-white flex items-center justify-center text-lilac-600 shadow-sm group-hover:bg-lilac-600 group-hover:text-white transition-all">
+                      <Mail size={24} className="md:w-7 md:h-7" />
                     </div>
-                    <div>
-                      <span className="block text-xs text-lilac-400 uppercase tracking-[0.2em] mb-1">אימייל</span>
-                      <span className="text-2xl font-body font-medium">avigailifergan@gmail.com</span>
+                    <div className="flex-1">
+                      <span className="inline-block bg-white/40 backdrop-blur-md px-3 py-1 rounded-lg border border-white/20 text-sm md:text-base text-lilac-600 font-medium uppercase tracking-[0.15em] mb-1">אימייל</span>
+                      <span className="block text-lg md:text-2xl font-body font-medium text-lilac-900 mt-1 break-all">avigailifergan@gmail.com</span>
                     </div>
                   </a>
                 </div>
 
-                <div className="flex gap-5 mt-16">
+                <div className="flex justify-center md:justify-start gap-5 mt-10 md:mt-16">
                   <a 
                     href="https://www.instagram.com/avigaili/?hl=en" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="w-14 h-14 rounded-full bg-white flex items-center justify-center text-lilac-600 hover:bg-lilac-600 hover:text-white transition-all shadow-sm"
+                    className="w-14 h-14 rounded-full bg-white flex items-center justify-center hover:scale-110 transition-all shadow-sm"
                   >
-                    <Instagram size={24} />
+                    <InstagramIcon className="w-8 h-8" />
                   </a>
                   <a 
                     href="https://www.facebook.com/avigail.ifergan/" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="w-14 h-14 rounded-full bg-white flex items-center justify-center text-lilac-600 hover:bg-lilac-600 hover:text-white transition-all shadow-sm"
+                    className="w-14 h-14 rounded-full bg-white flex items-center justify-center hover:scale-110 transition-all shadow-sm"
                   >
-                    <Facebook size={24} />
+                    <FacebookIcon className="w-8 h-8" />
                   </a>
                 </div>
               </div>
 
-              <div className="bg-white p-10 md:p-16 rounded-[3rem] shadow-[0_20px_50px_rgba(139,92,246,0.1)] border border-lilac-200">
-                <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
-                  <div className="space-y-3">
+              <div className="bg-white p-6 md:p-16 rounded-[2rem] md:rounded-[3rem] shadow-[0_20px_50px_rgba(139,92,246,0.1)] border border-lilac-200">
+                <form className="space-y-6 md:space-y-8" onSubmit={(e) => e.preventDefault()}>
+                  <div className="space-y-2 md:space-y-3">
                     <label className="text-sm font-body font-medium text-lilac-600 mr-2">שם מלא</label>
                     <input 
                       type="text" 
-                      className="w-full px-8 py-5 bg-lilac-50/50 border border-lilac-100 rounded-[1.5rem] focus:ring-2 focus:ring-lilac-200 focus:bg-white transition-all outline-none"
+                      className="w-full px-6 py-4 md:px-8 md:py-5 bg-[#FDE047]/40 border border-yellow-300 rounded-[1.2rem] md:rounded-[1.5rem] focus:ring-2 focus:ring-[#D4AF37] focus:bg-white transition-all outline-none"
                       placeholder="איך קוראים לך?"
                     />
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2 md:space-y-3">
                     <label className="text-sm font-body font-medium text-lilac-600 mr-2">אימייל / טלפון</label>
                     <input 
                       type="text" 
-                      className="w-full px-8 py-5 bg-lilac-50/50 border border-lilac-100 rounded-[1.5rem] focus:ring-2 focus:ring-lilac-200 focus:bg-white transition-all outline-none"
+                      className="w-full px-6 py-4 md:px-8 md:py-5 bg-[#FDE047]/40 border border-yellow-300 rounded-[1.2rem] md:rounded-[1.5rem] focus:ring-2 focus:ring-[#D4AF37] focus:bg-white transition-all outline-none"
                       placeholder="איך נחזור אליך?"
                     />
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2 md:space-y-3">
                     <label className="text-sm font-body font-medium text-lilac-600 mr-2">הודעה</label>
                     <textarea 
                       rows={4}
-                      className="w-full px-8 py-5 bg-lilac-50/50 border border-lilac-100 rounded-[1.5rem] focus:ring-2 focus:ring-lilac-200 focus:bg-white transition-all outline-none resize-none"
+                      className="w-full px-6 py-4 md:px-8 md:py-5 bg-[#FDE047]/40 border border-yellow-300 rounded-[1.2rem] md:rounded-[1.5rem] focus:ring-2 focus:ring-[#D4AF37] focus:bg-white transition-all outline-none resize-none"
                       placeholder="ספרו לי על האירוע שלכם..."
                     ></textarea>
                   </div>
-                  <button className="w-full py-5 bg-lilac-600 text-white rounded-[1.5rem] font-body font-medium text-lg hover:bg-lilac-700 transition-all shadow-xl shadow-lilac-200/50">
+                  <button className="w-full py-4 md:py-5 bg-lilac-600 text-white rounded-[1.5rem] font-body font-medium text-lg hover:bg-lilac-700 transition-all shadow-xl shadow-lilac-200/50">
                     שלחו הודעה
                   </button>
                 </form>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 

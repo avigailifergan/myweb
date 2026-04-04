@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;500;600&family=Heebo:wght@100;200;300;400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-headline: "Heebo", sans-serif;
+  --font-body: "Assistant", sans-serif;
+  
+  --color-lilac-50: #fdfaff;
+  --color-lilac-100: #f5f0ff;
+  --color-lilac-200: #ebe0ff;
+  --color-lilac-300: #dcc7ff;
+  --color-lilac-400: #c8a3ff;
+  --color-lilac-50: #b380ff;
+  --color-lilac-600: #9d5eff;
+  --color-lilac-700: #863dff;
+  --color-lilac-800: #6e1cff;
+  --color-lilac-900: #4c1d95;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply antialiased bg-lilac-50 text-lilac-900;
+}

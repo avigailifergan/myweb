@@ -10,11 +10,17 @@
   --color-lilac-200: #ebe0ff;
   --color-lilac-300: #dcc7ff;
   --color-lilac-400: #c8a3ff;
-  --color-lilac-50: #b380ff;
+  --color-lilac-500: #b380ff;
   --color-lilac-600: #9d5eff;
   --color-lilac-700: #863dff;
   --color-lilac-800: #6e1cff;
   --color-lilac-900: #4c1d95;
+
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.1); }
+  }
+  --animate-pulse-slow: pulse-slow 12s ease-in-out infinite;
 }
 
 html {
@@ -22,5 +28,20 @@ html {
 }
 
 body {
-  @apply antialiased bg-lilac-50 text-lilac-900;
+  @apply antialiased bg-[#FAF9FB] text-lilac-900 relative;
+}
+
+/* Premium Background Texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.015;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.glass-panel {
+  @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-xl;
 }

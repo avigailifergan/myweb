@@ -160,6 +160,8 @@ const InteractiveVideo: React.FC<{
       className={`relative group/interactive-video w-full ${aspect} ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={handleMouseEnter}
+      onTouchEnd={handleMouseLeave}
     >
       <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 group-hover/interactive-video:scale-[1.01]">
         <iframe 
@@ -535,7 +537,7 @@ const App: React.FC = () => {
             whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-[1500px] mx-auto px-4"
+            className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 max-w-[1500px] mx-auto px-4"
           >
             {[
               { id: 'F8VSti0LW0Q', title: 'אביגיל איפרגן' },

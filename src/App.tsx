@@ -136,13 +136,14 @@ const InteractiveVideo: React.FC<{
     setVideoUrl(`${src}${separator}${params.toString()}`);
   }, [src]);
 
+  const [isPlaying, setIsPlaying] = useState(false);
+
   const handleMouseEnter = () => {
     if (iframeRef.current?.contentWindow) {
       const win = iframeRef.current.contentWindow;
-      // Tell YT to mute first (security measure for autoplay)
       win.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
-      // Then play
       win.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
+      setIsPlaying(true);
     }
   };
 
@@ -152,6 +153,17 @@ const InteractiveVideo: React.FC<{
         JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
         '*'
       );
+      setIsPlaying(false);
+    }
+  };
+
+  const handleTogglePlay = () => {
+    if (isPlaying) {
+      handleMouseLeave();
+    } else {
+      handleMouseEnter();
+      // Ensure it's unmuted if they explicitly tapped to play, or leave it muted? 
+      // Usually autoplay requires mute. We'll leave it simple for now.
     }
   };
 
@@ -160,8 +172,7 @@ const InteractiveVideo: React.FC<{
       className={`relative group/interactive-video w-full ${aspect} ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onTouchStart={handleMouseEnter}
-      onTouchEnd={handleMouseLeave}
+      onClick={handleTogglePlay}
     >
       <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 group-hover/interactive-video:scale-[1.01]">
         <iframe 
@@ -530,14 +541,12 @@ const App: React.FC = () => {
           </div>
 
           {/* Small Video Grid - Updated to be smaller and more rectangular */}
-          <div className="text-center mb-12">
-          </div>
           <motion.div
             initial={{ opacity: 0, filter: 'blur(10px)', y: 30 }}
             whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 max-w-[1500px] mx-auto px-4"
+            className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 max-w-[1500px] mx-auto px-4"
           >
             {[
               { id: 'F8VSti0LW0Q', title: 'אביגיל איפרגן' },

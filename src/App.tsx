@@ -46,9 +46,9 @@ const FacebookIcon = ({ className = "w-6 h-6" }) => (
 );
 
 const IMAGES = {
-  singing: "https://lh3.googleusercontent.com/aida/ADBb0uijsMBTt-xnDpP9tOBxYUS0zZ7HlebiGrGa6plLUkFZVwZixCdWdSoqekARRhC9wvUWCOInlUU6T9MZopACwrcdIWuW9qY0cIknJXmEfoLTKfFOBNgFnLcizFuSUjeEsRQB-XiGYMXnmPcR9gynopwJRUSytbVtJC-W-IhTGzfIxc3tHx769q34tCTbK3UPsuxuaY6hGlM8q-mZ0Yxfr9bl-GXTSieWyjkRCFsgIv0dQXSReOlcGEtMX88F4Uf_BOwDYDpzD6nqv8o",
-  portrait: "https://lh3.googleusercontent.com/aida/ADBb0uijPQayeexPXLXuFvNfb13SnkvFni1YvCZEBsYyxcEi7art3-ckYN3iPRvsOK2YYrRv3674f2tuDN8s0MGWHNZkl9B_rZE6OLK6zRRBk47xrQttjQqw9tO_5j4T1uwl5Oe5ZzvD9G0-PlY-_xu_eIWnC4oOCqY5hKfHPXDyqjThcGYXpg6jkxstQMkwjIlsbS116jLdks4nBnbq3hG7iM9Iztb0ShuKRDV8DlqD9csY6GUayK2lSDHiAgx_QIpq_ucDKqre7z7Bsh0",
-  trumpet: "https://lh3.googleusercontent.com/aida/ADBb0ug_g7j-WzRO57S_H8S-mtJ-FQDEH2ymvG_lIgmH7hQE04wwffTdL240khZSh_pkSFocY51P2NA673uR33FOXjNgLN6eD9bOvNQkxZXxRWTaLRl2BHcBZronDLoZcKjp28LiqKmzdtr1rGmNoG5N9qFBL2evyUplztcksDQ2LaZrFEOyKuLYnfGVTz8dll1R38VtgNh6hQNuF45LmFqAhyp4kd4z0-RxYkdgH1E1XtA3dHKRQ8NGF-3-6hVnTP5U1buGI9iWb3GEQf0"
+  singing: "/images/hero/singing.JPG",
+  portrait: "/images/hero/portrait.jpg",
+  trumpet: "/images/hero/trumpet.jpg"
 };
 
 const SECTIONS = [

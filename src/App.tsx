@@ -192,6 +192,45 @@ const InteractiveVideo: React.FC<{
 const App: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    contact_info: '',
+    message: '',
+    'bot-field': ''
+  });
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormStatus('submitting');
+    
+    try {
+      const encode = (data: any) => {
+        return Object.keys(data)
+          .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(data[key]))
+          .join("&");
+      };
+
+      await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: encode({
+          "form-name": "contact",
+          ...formData
+        })
+      });
+      setFormStatus('success');
+      setFormData({ name: '', contact_info: '', message: '', 'bot-field': '' });
+      setTimeout(() => setFormStatus('idle'), 5000);
+    } catch (error) {
+      setFormStatus('error');
+      setTimeout(() => setFormStatus('idle'), 5000);
+    }
+  };
 
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
@@ -723,11 +762,25 @@ const App: React.FC = () => {
               </div>
 
               <div className="bg-white p-6 md:p-16 rounded-[2rem] md:rounded-[3rem] shadow-[0_20px_50px_rgba(139,92,246,0.1)] border border-lilac-200">
-                <form className="space-y-6 md:space-y-8" onSubmit={(e) => e.preventDefault()}>
+                <form 
+                  className="space-y-6 md:space-y-8" 
+                  onSubmit={handleFormSubmit}
+                  name="contact"
+                  data-netlify="true"
+                  netlify-honeypot="bot-field"
+                >
+                  <input type="hidden" name="form-name" value="contact" />
+                  <div className="hidden">
+                    <label>Don’t fill this out if you're human: <input name="bot-field" value={formData['bot-field']} onChange={handleFormChange} /></label>
+                  </div>
                   <div className="space-y-2 md:space-y-3">
                     <label className="text-sm font-body font-medium text-lilac-600 mr-2">שם מלא</label>
                     <input 
                       type="text" 
+                      name="name"
+                      required
+                      value={formData.name}
+                      onChange={handleFormChange}
                       className="w-full px-6 py-4 md:px-8 md:py-5 bg-[#FDE047]/60 border border-lilac-200 rounded-[1.2rem] md:rounded-[1.5rem] focus:ring-2 focus:ring-[#D4AF37] focus:bg-white transition-all outline-none text-lilac-900 placeholder:text-lilac-700 font-medium"
                       placeholder="איך קוראים לך?"
                     />
@@ -736,6 +789,10 @@ const App: React.FC = () => {
                     <label className="text-sm font-body font-medium text-lilac-600 mr-2">אימייל / טלפון</label>
                     <input 
                       type="text" 
+                      name="contact_info"
+                      required
+                      value={formData.contact_info}
+                      onChange={handleFormChange}
                       className="w-full px-6 py-4 md:px-8 md:py-5 bg-[#FDE047]/60 border border-lilac-200 rounded-[1.2rem] md:rounded-[1.5rem] focus:ring-2 focus:ring-[#D4AF37] focus:bg-white transition-all outline-none text-lilac-900 placeholder:text-lilac-700 font-medium"
                       placeholder="איך נחזור אליך?"
                     />
@@ -744,12 +801,20 @@ const App: React.FC = () => {
                     <label className="text-sm font-body font-medium text-lilac-600 mr-2">הודעה</label>
                     <textarea 
                       rows={4}
+                      name="message"
+                      required
+                      value={formData.message}
+                      onChange={handleFormChange}
                       className="w-full px-6 py-4 md:px-8 md:py-5 bg-[#FDE047]/60 border border-lilac-200 rounded-[1.2rem] md:rounded-[1.5rem] focus:ring-2 focus:ring-[#D4AF37] focus:bg-white transition-all outline-none resize-none text-lilac-900 placeholder:text-lilac-700 font-medium"
                       placeholder="ספרו לי על האירוע שלכם..."
                     ></textarea>
                   </div>
-                  <button className="w-full py-4 md:py-5 bg-lilac-600 text-white rounded-[1.5rem] font-body font-medium text-lg hover:bg-lilac-700 transition-all shadow-xl shadow-lilac-200/50">
-                    שלחו הודעה
+                  <button 
+                    type="submit"
+                    disabled={formStatus === 'submitting'}
+                    className="w-full py-4 md:py-5 bg-lilac-600 text-white rounded-[1.5rem] font-body font-medium text-lg hover:bg-lilac-700 transition-all shadow-xl shadow-lilac-200/50 disabled:opacity-70"
+                  >
+                    {formStatus === 'submitting' ? 'שולח...' : formStatus === 'success' ? 'ההודעה נשלחה בהצלחה!' : formStatus === 'error' ? 'שגיאה בשליחה, נסו שוב' : 'שלחו הודעה'}
                   </button>
                 </form>
               </div>

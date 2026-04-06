@@ -101,6 +101,7 @@ const AudioPlayerItem: React.FC<{ title: string, src: string, duration?: string 
       <audio 
         ref={audioRef} 
         src={src} 
+        preload="none"
         onEnded={() => setIsPlaying(false)}
         onPause={() => setIsPlaying(false)}
         onPlay={() => setIsPlaying(true)}
@@ -182,6 +183,7 @@ const InteractiveVideo: React.FC<{
           className={`absolute inset-0 w-full h-full ${iframeClassName} pointer-events-none`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
           allowFullScreen
+          loading="lazy"
         ></iframe>
         <div className="absolute inset-0 bg-transparent z-20 cursor-pointer"></div>
       </div>
@@ -241,6 +243,14 @@ const App: React.FC = () => {
 
   const backgroundY1 = useTransform(scrollYProgress, [0, 1], [0, -100]);
   const backgroundY2 = useTransform(scrollYProgress, [0, 1], [0, 100]);
+
+  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -380,12 +390,14 @@ const App: React.FC = () => {
         <div className="absolute inset-0 z-0 flex">
           {/* Left Image (Image 3) - Desktop Only */}
           <div className="hidden md:block w-1/3 h-full relative">
-            <img 
-              src={IMAGES.trumpet} 
-              alt="" 
-              className="w-full h-full object-cover object-top opacity-30"
-              referrerPolicy="no-referrer"
-            />
+            {isDesktop && (
+              <img 
+                src={IMAGES.trumpet} 
+                alt="" 
+                className="w-full h-full object-cover object-top opacity-30"
+                referrerPolicy="no-referrer"
+              />
+            )}
           </div>
           {/* Middle Image (Image 2) - Full on Mobile, 1/3 on Desktop */}
           <div className="w-full md:w-1/3 h-full relative">
@@ -394,16 +406,19 @@ const App: React.FC = () => {
               alt="" 
               className="w-full h-full object-cover opacity-60 md:opacity-50"
               referrerPolicy="no-referrer"
+              fetchPriority="high"
             />
           </div>
           {/* Right Image (Image 1) - Desktop Only */}
           <div className="hidden md:block w-1/3 h-full relative">
-            <img 
-              src={IMAGES.singing} 
-              alt="" 
-              className="w-full h-full object-cover object-bottom opacity-30 scale-x-[-1]"
-              referrerPolicy="no-referrer"
-            />
+            {isDesktop && (
+              <img 
+                src={IMAGES.singing} 
+                alt="" 
+                className="w-full h-full object-cover object-bottom opacity-30 scale-x-[-1]"
+                referrerPolicy="no-referrer"
+              />
+            )}
           </div>
           <div className="absolute inset-0 bg-gradient-to-b from-lilac-50/10 via-lilac-50/40 to-lilac-50/90 md:from-lilac-50/20 md:via-transparent md:to-lilac-50"></div>
         </div>

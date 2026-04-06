@@ -46,9 +46,9 @@ const FacebookIcon = ({ className = "w-6 h-6" }) => (
 );
 
 const IMAGES = {
-  singing: "/images/hero/singing.JPG",
-  portrait: "/images/hero/portrait.jpg",
-  trumpet: "/images/hero/trumpet.jpg"
+  singing: { webp: "/images/hero/singing.webp", jpg: "/images/hero/singing.JPG" },
+  portrait: { webp: "/images/hero/portrait.webp", mobileWebp: "/images/hero/portrait-mobile.webp", jpg: "/images/hero/portrait.jpg" },
+  trumpet: { webp: "/images/hero/trumpet.webp", jpg: "/images/hero/trumpet.jpg" },
 };
 
 const SECTIONS = [
@@ -118,53 +118,43 @@ const InteractiveVideo: React.FC<{
   aspect?: string
 }> = ({ src, title, className = "", iframeClassName = "scale-105", aspect = "aspect-video" }) => {
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
-  const [videoUrl, setVideoUrl] = useState("");
-  
-  useEffect(() => {
-    // Built-in parameters for YouTube IFrame API control
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Extract YouTube video ID for thumbnail
+  const videoId = src.split('/embed/')[1]?.split('?')[0] || '';
+  const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+  const buildUrl = (autoplay: boolean) => {
     const params = new URLSearchParams({
       enablejsapi: '1',
       mute: '1',
-      autoplay: '0',
+      autoplay: autoplay ? '1' : '0',
       modestbranding: '1',
       rel: '0',
       controls: '1',
       origin: window.location.origin
     });
-    
-    // Check if src already has params
     const separator = src.includes('?') ? '&' : '?';
-    setVideoUrl(`${src}${separator}${params.toString()}`);
-  }, [src]);
-
-  const [isPlaying, setIsPlaying] = useState(false);
+    return `${src}${separator}${params.toString()}`;
+  };
 
   const handleMouseEnter = () => {
+    if (!isLoaded) {
+      setIsLoaded(true);
+      return;
+    }
     if (iframeRef.current?.contentWindow) {
-      const win = iframeRef.current.contentWindow;
-      win.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
-      win.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
-      setIsPlaying(true);
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'
+      );
     }
   };
 
   const handleMouseLeave = () => {
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
-        '*'
+        JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*'
       );
-      setIsPlaying(false);
-    }
-  };
-
-  const handleTogglePlay = () => {
-    if (isPlaying) {
-      handleMouseLeave();
-    } else {
-      handleMouseEnter();
-      // Ensure it's unmuted if they explicitly tapped to play, or leave it muted? 
-      // Usually autoplay requires mute. We'll leave it simple for now.
     }
   };
 
@@ -173,19 +163,38 @@ const InteractiveVideo: React.FC<{
       className={`relative group/interactive-video w-full ${aspect} ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onClick={handleTogglePlay}
+      onClick={() => setIsLoaded(true)}
     >
       <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 group-hover/interactive-video:scale-[1.01]">
-        <iframe 
-          ref={iframeRef}
-          src={videoUrl} 
-          title={title}
-          className={`absolute inset-0 w-full h-full ${iframeClassName} pointer-events-none`}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-          allowFullScreen
-          loading="lazy"
-        ></iframe>
-        <div className="absolute inset-0 bg-transparent z-20 cursor-pointer"></div>
+        {!isLoaded ? (
+          <>
+            <img
+              src={thumbnailUrl}
+              alt={title}
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-black/25 flex items-center justify-center group-hover/interactive-video:bg-black/10 transition-colors">
+              <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover/interactive-video:scale-110">
+                <svg viewBox="0 0 24 24" className="w-7 h-7 text-white ml-1" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <iframe 
+              ref={iframeRef}
+              src={buildUrl(true)} 
+              title={title}
+              className={`absolute inset-0 w-full h-full ${iframeClassName} pointer-events-none`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowFullScreen
+            ></iframe>
+            <div className="absolute inset-0 bg-transparent z-20 cursor-pointer"></div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -388,36 +397,45 @@ const App: React.FC = () => {
       {/* Hero Section */}
       <header className="relative h-screen flex flex-col justify-between md:justify-end items-center pt-16 md:pt-0 pb-20 overflow-hidden">
         <div className="absolute inset-0 z-0 flex">
-          {/* Left Image (Image 3) - Desktop Only */}
+          {/* Left Image (trumpet) - Desktop Only */}
           <div className="hidden md:block w-1/3 h-full relative">
             {isDesktop && (
-              <img 
-                src={IMAGES.trumpet} 
-                alt="" 
-                className="w-full h-full object-cover object-top opacity-30"
-                referrerPolicy="no-referrer"
-              />
+              <picture>
+                <source srcSet={IMAGES.trumpet.webp} type="image/webp" />
+                <img 
+                  src={IMAGES.trumpet.jpg} 
+                  alt="" 
+                  className="w-full h-full object-cover object-top opacity-30"
+                  loading="lazy"
+                />
+              </picture>
             )}
           </div>
-          {/* Middle Image (Image 2) - Full on Mobile, 1/3 on Desktop */}
+          {/* Middle Image (portrait) - Full on Mobile, 1/3 on Desktop */}
           <div className="w-full md:w-1/3 h-full relative">
-            <img 
-              src={IMAGES.portrait} 
-              alt="" 
-              className="w-full h-full object-cover opacity-60 md:opacity-50"
-              referrerPolicy="no-referrer"
-              fetchPriority="high"
-            />
+            <picture>
+              <source media="(max-width: 767px)" srcSet={IMAGES.portrait.mobileWebp} type="image/webp" />
+              <source srcSet={IMAGES.portrait.webp} type="image/webp" />
+              <img 
+                src={IMAGES.portrait.jpg} 
+                alt="" 
+                className="w-full h-full object-cover opacity-60 md:opacity-50"
+                fetchPriority="high"
+              />
+            </picture>
           </div>
-          {/* Right Image (Image 1) - Desktop Only */}
+          {/* Right Image (singing) - Desktop Only */}
           <div className="hidden md:block w-1/3 h-full relative">
             {isDesktop && (
-              <img 
-                src={IMAGES.singing} 
-                alt="" 
-                className="w-full h-full object-cover object-bottom opacity-30 scale-x-[-1]"
-                referrerPolicy="no-referrer"
-              />
+              <picture>
+                <source srcSet={IMAGES.singing.webp} type="image/webp" />
+                <img 
+                  src={IMAGES.singing.jpg} 
+                  alt="" 
+                  className="w-full h-full object-cover object-bottom opacity-30 scale-x-[-1]"
+                  loading="lazy"
+                />
+              </picture>
             )}
           </div>
           <div className="absolute inset-0 bg-gradient-to-b from-lilac-50/10 via-lilac-50/40 to-lilac-50/90 md:from-lilac-50/20 md:via-transparent md:to-lilac-50"></div>
@@ -555,6 +573,7 @@ const App: React.FC = () => {
                     allowFullScreen 
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
                     loading="lazy"
+                    referrerPolicy="no-referrer"
                   ></iframe>
                 </div>
               </div>
@@ -588,6 +607,7 @@ const App: React.FC = () => {
                     allowFullScreen 
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
                     loading="lazy"
+                    referrerPolicy="no-referrer"
                   ></iframe>
                 </div>
               </div>

@@ -56,6 +56,7 @@ const SECTIONS = [
   { id: 'trumpet', title: 'חצוצרה והרכבי תנועה', icon: <Music className="w-5 h-5" /> },
   { id: 'acting', title: 'משחק ותדמית', icon: <Video className="w-5 h-5" /> },
   { id: 'voiceover', title: 'קריינות ומוסיקה לפרסומות', icon: <Mic2 className="w-5 h-5" /> },
+  { id: 'gallery', title: 'גלריה', icon: <Sparkles className="w-5 h-5" /> },
   { id: 'contact', title: 'צור קשר', icon: <Phone className="w-5 h-5" /> },
 ];
 
@@ -118,21 +119,40 @@ const InteractiveVideo: React.FC<{
   aspect?: string
 }> = ({ src, title, className = "", iframeClassName = "scale-105", aspect = "aspect-video" }) => {
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
-  // Extract YouTube video ID for thumbnail
-  const videoId = src.split('/embed/')[1]?.split('?')[0] || '';
-  const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  // Extract YouTube video ID safely for thumbnail
+  const videoId = src?.includes('/embed/') ? src.split('/embed/')[1]?.split('?')[0] : '';
+  const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '';
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsInView(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: '200px' });
+    
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, []);
 
   const buildUrl = (autoplay: boolean) => {
+    if (!src) return '';
     const params = new URLSearchParams({
       enablejsapi: '1',
-      mute: '1',
+      mute: '1', // required for browser auto-play on hover
       autoplay: autoplay ? '1' : '0',
       modestbranding: '1',
       rel: '0',
       controls: '1',
-      origin: window.location.origin
+      origin: typeof window !== 'undefined' ? window.location.origin : ''
     });
     const separator = src.includes('?') ? '&' : '?';
     return `${src}${separator}${params.toString()}`;
@@ -147,6 +167,11 @@ const InteractiveVideo: React.FC<{
       iframeRef.current.contentWindow.postMessage(
         JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'
       );
+      if (hasInteracted) {
+        iframeRef.current.contentWindow.postMessage(
+          JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*'
+        );
+      }
     }
   };
 
@@ -158,42 +183,65 @@ const InteractiveVideo: React.FC<{
     }
   };
 
+  const handleOverlayClick = () => {
+    setIsLoaded(true);
+    setHasInteracted(true);
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*'
+      );
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'
+      );
+    }
+  };
+
   return (
     <div 
+      ref={containerRef}
       className={`relative group/interactive-video w-full ${aspect} ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onClick={() => setIsLoaded(true)}
     >
       <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 group-hover/interactive-video:scale-[1.01]">
-        {!isLoaded ? (
-          <>
-            <img
-              src={thumbnailUrl}
-              alt={title}
-              className="absolute inset-0 w-full h-full object-cover"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-black/25 flex items-center justify-center group-hover/interactive-video:bg-black/10 transition-colors">
-              <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover/interactive-video:scale-110">
-                <svg viewBox="0 0 24 24" className="w-7 h-7 text-white ml-1" fill="currentColor">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
+        {isInView && (
+          !isLoaded ? (
+            <>
+              {thumbnailUrl && (
+                <img
+                  src={thumbnailUrl}
+                  alt={title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                />
+              )}
+              <div 
+                className="absolute inset-0 bg-black/25 flex items-center justify-center group-hover/interactive-video:bg-black/10 transition-colors cursor-pointer"
+                onClick={handleOverlayClick}
+              >
+                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover/interactive-video:scale-110">
+                  <svg viewBox="0 0 24 24" className="w-7 h-7 text-white ml-1" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </div>
               </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <iframe 
-              ref={iframeRef}
-              src={buildUrl(true)} 
-              title={title}
-              className={`absolute inset-0 w-full h-full ${iframeClassName} pointer-events-none`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowFullScreen
-            ></iframe>
-            <div className="absolute inset-0 bg-transparent z-20 cursor-pointer"></div>
-          </>
+            </>
+          ) : (
+            <>
+              <iframe 
+                ref={iframeRef}
+                src={buildUrl(true)} 
+                title={title}
+                className={`absolute inset-0 w-full h-full ${iframeClassName} pointer-events-none`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+              ></iframe>
+              <div 
+                className={`absolute inset-0 bg-transparent z-20 ${hasInteracted ? 'pointer-events-none' : 'cursor-pointer'}`}
+                onClick={handleOverlayClick}
+              ></div>
+            </>
+          )
         )}
       </div>
     </div>
@@ -301,94 +349,82 @@ const App: React.FC = () => {
         />
       </div>
       {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'py-3' : 'py-6'}`}>
-        <div className="max-w-7xl mx-auto px-6 flex justify-center items-center">
-          {/* Desktop Menu Styled Container */}
-          <div className="hidden md:flex items-center gap-6 px-10 py-3 bg-white/80 backdrop-blur-md rounded-2xl border border-white/20 shadow-lg shadow-lilac-100/20">
-            {SECTIONS.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => scrollToSection(section.id)}
-                className="text-sm font-body font-bold tracking-widest text-lilac-900 hover:text-lilac-600 transition-colors uppercase whitespace-nowrap"
-              >
-                {section.title}
-              </button>
-            ))}
-            <div className="flex items-center gap-5 mr-2 border-r border-lilac-100 pr-6">
-              <a 
-                href="https://www.instagram.com/avigaili/?hl=en" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="hover:scale-110 transition-transform"
-                title="Instagram"
-              >
-                <InstagramIcon className="w-[1.65rem] h-[1.65rem]" />
-              </a>
-              <a 
-                href="https://www.facebook.com/avigail.ifergan/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="hover:scale-110 transition-transform"
-                title="Facebook"
-              >
-                <FacebookIcon className="w-6 h-6" />
-              </a>
-            </div>
-          </div>
-
-          {/* Mobile Navigation Icons */}
-          <div className="md:hidden flex w-full justify-between items-center">
-            {/* Social Links Icons (Start of row = Right in RTL) - Minimal Style */}
-            <div className="flex gap-0 mr-1 items-center h-10">
-              <a 
-                href="https://www.instagram.com/avigaili/?hl=en" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="p-1 pr-1.5 pl-0.5 text-lilac-700 active:scale-90 transition-transform"
-              >
-                <InstagramIcon className="w-[1.7rem] h-[1.7rem] stroke-[1.75px]" />
-              </a>
-              <a 
-                href="https://www.facebook.com/avigail.ifergan/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="p-1 px-1.5 text-lilac-700 active:scale-90 transition-transform"
-              >
-                <FacebookIcon className="w-[1.5rem] h-[1.5rem] stroke-[1.75px] relative -top-[1.5px]" />
-              </a>
-            </div>
-
-            {/* Menu Toggle (End of row = Left in RTL) */}
-            <button 
-              className="p-3 bg-white/80 backdrop-blur-md rounded-xl shadow-sm text-lilac-700 border border-lilac-100/50" 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'py-3' : 'py-5'}`}>
+        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center relative z-50">
+          
+          {/* Social Links on Right (RTL start) */}
+          <div className="flex gap-2 items-center h-10 w-32">
+            <a 
+              href="https://www.instagram.com/avigaili/?hl=en" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="p-1.5 text-lilac-700 hover:text-lilac-900 active:scale-90 transition-transform bg-white/80 backdrop-blur-md rounded-full shadow-sm border border-lilac-100/30"
             >
-              {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+              <InstagramIcon className="w-[1.6rem] h-[1.6rem] stroke-[1.75px]" />
+            </a>
+            <a 
+              href="https://www.facebook.com/avigail.ifergan/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="p-1.5 text-lilac-700 hover:text-lilac-900 active:scale-90 transition-transform bg-white/80 backdrop-blur-md rounded-full shadow-sm border border-lilac-100/30"
+            >
+              <FacebookIcon className="w-[1.6rem] h-[1.6rem] stroke-[1.75px]" />
+            </a>
           </div>
+
+          {/* Hamburger Menu on Left (RTL end) */}
+          <button 
+            className="p-3 bg-white/80 backdrop-blur-md rounded-xl shadow-sm text-lilac-700 border border-lilac-100/50 hover:bg-white transition-colors" 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
+      {/* Menu Overlay (Both Mobile & Desktop) */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-40 bg-white pt-24 px-6 md:hidden"
+            initial={{ opacity: 0, x: '-100%', filter: 'blur(10px)' }}
+            animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, x: '-100%', filter: 'blur(10px)' }}
+            transition={{ duration: 0.3, type: 'spring', bounce: 0, stiffness: 100 }}
+            className="fixed top-0 left-0 bottom-0 w-[85vw] md:w-96 z-50 bg-white/95 backdrop-blur-md pt-24 px-6 overflow-y-auto shadow-[20px_0_50px_rgba(0,0,0,0.1)] border-r border-lilac-100"
           >
-            <div className="flex flex-col gap-6">
-              {SECTIONS.map((section) => (
+            {/* Close Button Inside Menu */}
+            <button 
+              className="absolute top-6 right-6 p-2 text-lilac-400 hover:text-lilac-800 transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <X size={28} />
+            </button>
+
+            <div className="flex flex-col gap-6 md:gap-8 pb-8 border-b border-lilac-100 mt-6 md:mt-10">
+              {SECTIONS.filter(s => s.id !== 'gallery').map((section) => (
                 <button
                   key={section.id}
                   onClick={() => scrollToSection(section.id)}
-                  className="flex items-center gap-4 text-2xl font-headline font-light text-lilac-800 border-b border-lilac-100 pb-4"
+                  className="flex items-center gap-5 text-2xl md:text-3xl font-headline font-light text-lilac-800 hover:text-lilac-500 hover:translate-x-[-8px] transition-all"
                 >
-                  {section.icon}
+                  <span className="bg-lilac-50 p-2.5 rounded-xl text-lilac-500 shadow-sm">{section.icon}</span>
                   {section.title}
                 </button>
               ))}
+            </div>
+
+            {/* Side Menu Gallery */}
+            <div className="mt-8 pb-20">
+              <h3 className="text-2xl font-headline font-light text-lilac-900 mb-6 flex items-center gap-3">
+                <Sparkles className="w-6 h-6 text-lilac-500" />
+                גלריה
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <img src="/images/gallery/1.jpg" alt="Gallery 1" className="w-full aspect-square object-cover rounded-2xl shadow-sm border border-lilac-100/50 hover:scale-105 transition-transform cursor-pointer" />
+                <img src="/images/gallery/2.jpg" alt="Gallery 2" className="w-full aspect-square object-cover rounded-2xl shadow-sm border border-lilac-100/50 hover:scale-105 transition-transform cursor-pointer" />
+                <img src="/images/gallery/3.jpg" alt="Gallery 3" className="w-full aspect-square object-cover rounded-2xl shadow-sm border border-lilac-100/50 hover:scale-105 transition-transform cursor-pointer" />
+                <img src="/images/gallery/4.jpg" alt="Gallery 4" className="w-full aspect-square object-cover rounded-2xl shadow-sm border border-lilac-100/50 hover:scale-105 transition-transform cursor-pointer" />
+              </div>
             </div>
           </motion.div>
         )}
@@ -497,8 +533,18 @@ const App: React.FC = () => {
                 הופעות שירה חיה המותאמות אישית לכל אירוע. מרגעים מרגשים בחופה ועד לאווירה יוקרתית בקבלות פנים. שילוב של ווקאליות עוצמתית ונוכחות בימתית המביאה איתה רגש עמוק לכל רגע.
               </p>
 
-              {/* Smaller Videos Grid - Natural Alignment with Auto-play on Hover */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-6xl mx-auto mt-20">
+              {/* Enlarged Prominent Video */}
+              <div className="w-full max-w-5xl mx-auto mt-20 relative z-20 mb-12">
+                <InteractiveVideo 
+                  src="https://www.youtube.com/embed/lJDnYfQ8KIk"
+                  title="אביגיל איפרגן - שירה לכל אירוע"
+                  aspect="aspect-video"
+                  className="w-full max-w-full mx-auto rounded-[2.5rem] shadow-2xl"
+                />
+              </div>
+
+              {/* Smaller Videos Grid - Below the Prominent Video */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mx-auto mt-10 opacity-90 scale-95">
                 <InteractiveVideo 
                   src="https://www.youtube.com/embed/prYFJvjaLQo"
                   title="אביגיל איפרגן - שירה 1"
@@ -736,6 +782,7 @@ const App: React.FC = () => {
           </div>
         </div>
       </section>
+
 
       {/* Contact Section - Fully Lilac Wrapped */}
       <section id="contact" className="py-20 md:py-32 px-4 md:px-6 bg-lilac-50/80 relative">

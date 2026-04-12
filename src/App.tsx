@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'motion/react';
 import { 
   Music, 
@@ -119,10 +120,10 @@ const InteractiveVideo: React.FC<{
 }> = ({ src, title, className = "", iframeClassName = "scale-105", aspect = "aspect-video" }) => {
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isInView, setIsInView] = useState(false);
 
-  // Extract YouTube video ID safely for thumbnail
+  // Extract YouTube video ID
   const videoId = src?.includes('/embed/') ? src.split('/embed/')[1]?.split('?')[0] : '';
   const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '';
 
@@ -133,24 +134,24 @@ const InteractiveVideo: React.FC<{
           setIsInView(true);
           observer.disconnect();
         }
-      }, { rootMargin: '50px' });
+      }, { rootMargin: '300px' }); // Load slightly before it comes into view to pre-warm iframe
       
       if (containerRef.current) {
         observer.observe(containerRef.current);
       }
       return () => observer.disconnect();
     } catch(e) {
-      // Fallback for older browsers
       setIsInView(true);
     }
   }, []);
 
-  const buildUrl = (autoplay: boolean) => {
+  const buildUrl = () => {
     if (!src) return '';
     const params = new URLSearchParams({
       enablejsapi: '1',
+      playsinline: '1',
       mute: '0', 
-      autoplay: autoplay ? '1' : '0',
+      autoplay: '0',
       modestbranding: '1',
       rel: '0',
       controls: '1',
@@ -162,12 +163,9 @@ const InteractiveVideo: React.FC<{
 
   const handleMouseEnter = () => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    if (isMobile) return; // Completely block hover logic on mobile
+    if (isMobile) return; 
 
-    if (!isLoaded) {
-      setIsLoaded(true);
-      return;
-    }
+    setIsPlaying(true);
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
         JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'
@@ -179,6 +177,7 @@ const InteractiveVideo: React.FC<{
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     if (isMobile) return;
 
+    setIsPlaying(false);
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
         JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*'
@@ -187,7 +186,9 @@ const InteractiveVideo: React.FC<{
   };
 
   const handleOverlayClick = () => {
-    setIsLoaded(true);
+    flushSync(() => {
+      setIsPlaying(true);
+    });
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
         JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'
@@ -204,39 +205,39 @@ const InteractiveVideo: React.FC<{
     >
       <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 group-hover/interactive-video:scale-[1.01]">
         {isInView && (
-          !isLoaded ? (
-            <>
-              {thumbnailUrl && (
-                <img
-                  src={thumbnailUrl}
-                  alt={title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  loading="lazy"
-                />
-              )}
+          <>
+            <iframe 
+              ref={iframeRef}
+              src={buildUrl()} 
+              title={title}
+              className={`absolute inset-0 w-full h-full ${iframeClassName}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowFullScreen
+            ></iframe>
+
+            {!isPlaying && (
               <div 
-                className="absolute inset-0 bg-black/25 flex items-center justify-center group-hover/interactive-video:bg-black/10 transition-colors cursor-pointer"
+                className="absolute inset-0 flex items-center justify-center cursor-pointer z-20"
                 onClick={handleOverlayClick}
               >
-                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover/interactive-video:scale-110">
-                  <svg viewBox="0 0 24 24" className="w-7 h-7 text-white ml-1" fill="currentColor">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
+                {thumbnailUrl && (
+                  <img
+                    src={thumbnailUrl}
+                    alt={title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/25 flex items-center justify-center group-hover/interactive-video:bg-black/10 transition-colors">
+                  <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover/interactive-video:scale-110">
+                    <svg viewBox="0 0 24 24" className="w-7 h-7 text-white ml-1" fill="currentColor">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
                 </div>
               </div>
-            </>
-          ) : (
-            <>
-              <iframe 
-                ref={iframeRef}
-                src={buildUrl(true)} 
-                title={title}
-                className={`absolute inset-0 w-full h-full ${iframeClassName}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowFullScreen
-              ></iframe>
-            </>
-          )
+            )}
+          </>
         )}
       </div>
     </div>

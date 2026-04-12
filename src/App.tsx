@@ -56,7 +56,6 @@ const SECTIONS = [
   { id: 'trumpet', title: 'חצוצרה והרכבי תנועה', icon: <Music className="w-5 h-5" /> },
   { id: 'acting', title: 'משחק ותדמית', icon: <Video className="w-5 h-5" /> },
   { id: 'voiceover', title: 'קריינות ומוסיקה לפרסומות', icon: <Mic2 className="w-5 h-5" /> },
-  { id: 'gallery', title: 'גלריה', icon: <Sparkles className="w-5 h-5" /> },
   { id: 'contact', title: 'צור קשר', icon: <Phone className="w-5 h-5" /> },
 ];
 
@@ -122,32 +121,35 @@ const InteractiveVideo: React.FC<{
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
 
   // Extract YouTube video ID safely for thumbnail
   const videoId = src?.includes('/embed/') ? src.split('/embed/')[1]?.split('?')[0] : '';
   const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '';
 
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setIsInView(true);
-        observer.disconnect();
+    try {
+      const observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      }, { rootMargin: '50px' });
+      
+      if (containerRef.current) {
+        observer.observe(containerRef.current);
       }
-    }, { rootMargin: '200px' });
-    
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
+      return () => observer.disconnect();
+    } catch(e) {
+      // Fallback for older browsers
+      setIsInView(true);
     }
-    
-    return () => observer.disconnect();
   }, []);
 
   const buildUrl = (autoplay: boolean) => {
     if (!src) return '';
     const params = new URLSearchParams({
       enablejsapi: '1',
-      mute: '1', // required for browser auto-play on hover
+      mute: '0', 
       autoplay: autoplay ? '1' : '0',
       modestbranding: '1',
       rel: '0',
@@ -159,6 +161,9 @@ const InteractiveVideo: React.FC<{
   };
 
   const handleMouseEnter = () => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    if (isMobile) return; // Completely block hover logic on mobile
+
     if (!isLoaded) {
       setIsLoaded(true);
       return;
@@ -167,15 +172,13 @@ const InteractiveVideo: React.FC<{
       iframeRef.current.contentWindow.postMessage(
         JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'
       );
-      if (hasInteracted) {
-        iframeRef.current.contentWindow.postMessage(
-          JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*'
-        );
-      }
     }
   };
 
   const handleMouseLeave = () => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    if (isMobile) return;
+
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
         JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*'
@@ -185,11 +188,7 @@ const InteractiveVideo: React.FC<{
 
   const handleOverlayClick = () => {
     setIsLoaded(true);
-    setHasInteracted(true);
     if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*'
-      );
       iframeRef.current.contentWindow.postMessage(
         JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'
       );
@@ -232,14 +231,10 @@ const InteractiveVideo: React.FC<{
                 ref={iframeRef}
                 src={buildUrl(true)} 
                 title={title}
-                className={`absolute inset-0 w-full h-full ${iframeClassName} pointer-events-none`}
+                className={`absolute inset-0 w-full h-full ${iframeClassName}`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                 allowFullScreen
               ></iframe>
-              <div 
-                className={`absolute inset-0 bg-transparent z-20 ${hasInteracted ? 'pointer-events-none' : 'cursor-pointer'}`}
-                onClick={handleOverlayClick}
-              ></div>
             </>
           )
         )}
@@ -400,31 +395,17 @@ const App: React.FC = () => {
               <X size={28} />
             </button>
 
-            <div className="flex flex-col gap-6 md:gap-8 pb-8 border-b border-lilac-100 mt-6 md:mt-10">
-              {SECTIONS.filter(s => s.id !== 'gallery').map((section) => (
+            <div className="flex flex-col gap-5 pb-8 mt-6 md:mt-10">
+              {SECTIONS.map((section) => (
                 <button
                   key={section.id}
                   onClick={() => scrollToSection(section.id)}
-                  className="flex items-center gap-5 text-2xl md:text-3xl font-headline font-light text-lilac-800 hover:text-lilac-500 hover:translate-x-[-8px] transition-all"
+                  className="flex items-center gap-4 text-xl md:text-2xl font-headline font-light text-lilac-800 hover:text-lilac-500 hover:translate-x-[-8px] transition-all"
                 >
                   <span className="bg-lilac-50 p-2.5 rounded-xl text-lilac-500 shadow-sm">{section.icon}</span>
                   {section.title}
                 </button>
               ))}
-            </div>
-
-            {/* Side Menu Gallery */}
-            <div className="mt-8 pb-20">
-              <h3 className="text-2xl font-headline font-light text-lilac-900 mb-6 flex items-center gap-3">
-                <Sparkles className="w-6 h-6 text-lilac-500" />
-                גלריה
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                <img src="/images/gallery/1.jpg" alt="Gallery 1" className="w-full aspect-square object-cover rounded-2xl shadow-sm border border-lilac-100/50 hover:scale-105 transition-transform cursor-pointer" />
-                <img src="/images/gallery/2.jpg" alt="Gallery 2" className="w-full aspect-square object-cover rounded-2xl shadow-sm border border-lilac-100/50 hover:scale-105 transition-transform cursor-pointer" />
-                <img src="/images/gallery/3.jpg" alt="Gallery 3" className="w-full aspect-square object-cover rounded-2xl shadow-sm border border-lilac-100/50 hover:scale-105 transition-transform cursor-pointer" />
-                <img src="/images/gallery/4.jpg" alt="Gallery 4" className="w-full aspect-square object-cover rounded-2xl shadow-sm border border-lilac-100/50 hover:scale-105 transition-transform cursor-pointer" />
-              </div>
             </div>
           </motion.div>
         )}

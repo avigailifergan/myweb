@@ -45,3 +45,27 @@ body::before {
 .glass-panel {
   @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-xl;
 }
+
+/* Fix mobile touch responsiveness */
+button,
+a,
+section {
+  touch-action: manipulation;
+  pointer-events: auto;
+}
+
+/* Mobile Performance Optimizations */
+@media (max-width: 768px) {
+  /* Disable heavy animations & reduce motion */
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Less intense background filter for better performance on mobile */
+  body::before {
+    opacity: 0.005;
+  }
+}

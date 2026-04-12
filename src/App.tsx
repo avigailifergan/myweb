@@ -122,6 +122,7 @@ const InteractiveVideo: React.FC<{
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInView, setIsInView] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   // Extract YouTube video ID
   const videoId = src?.includes('/embed/') ? src.split('/embed/')[1]?.split('?')[0] : '';
@@ -151,20 +152,23 @@ const InteractiveVideo: React.FC<{
       enablejsapi: '1',
       playsinline: '1',
       mute: '0', 
-      autoplay: '0',
+      autoplay: '1', // Default to 1 because the iframe will only render upon first interaction
       modestbranding: '1',
       rel: '0',
       controls: '1',
       origin: typeof window !== 'undefined' ? window.location.origin : ''
     });
-    const separator = src.includes('?') ? '&' : '?';
-    return `${src}${separator}${params.toString()}`;
+    // Remove duplicate autoplay query param if any
+    const cleanSrc = src.replace(/(\?|&)autoplay=[01]/, '');
+    const separator = cleanSrc.includes('?') ? '&' : '?';
+    return `${cleanSrc}${separator}${params.toString()}`;
   };
 
   const handleMouseEnter = () => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     if (isMobile) return; 
 
+    setHasInteracted(true);
     setIsPlaying(true);
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
@@ -187,6 +191,7 @@ const InteractiveVideo: React.FC<{
 
   const handleOverlayClick = () => {
     flushSync(() => {
+      setHasInteracted(true);
       setIsPlaying(true);
     });
     if (iframeRef.current?.contentWindow) {
@@ -206,14 +211,16 @@ const InteractiveVideo: React.FC<{
       <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 group-hover/interactive-video:scale-[1.01]">
         {isInView && (
           <>
-            <iframe 
-              ref={iframeRef}
-              src={buildUrl()} 
-              title={title}
-              className={`absolute inset-0 w-full h-full ${iframeClassName}`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowFullScreen
-            ></iframe>
+            {hasInteracted && (
+              <iframe 
+                ref={iframeRef}
+                src={buildUrl()} 
+                title={title}
+                className={`absolute inset-0 w-full h-full ${iframeClassName} z-0`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+              ></iframe>
+            )}
 
             {!isPlaying && (
               <div 
@@ -589,22 +596,24 @@ const App: React.FC = () => {
               </p>
               
               {/* Spotify Embed - Desktop Hidden on bottom to be shown in column */}
-              <div className="hidden md:block w-full max-w-md pt-16">
-                <div className="rounded-[12px] overflow-hidden shadow-2xl">
-                  <iframe 
-                    data-testid="embed-iframe" 
-                    style={{ borderRadius: '12px', display: 'block' }} 
-                    src="https://open.spotify.com/embed/track/6lcN1FC6PoiCvkq5om9G4o?utm_source=generator" 
-                    width="100%" 
-                    height="152" 
-                    frameBorder="0" 
-                    allowFullScreen 
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                  ></iframe>
+              {isDesktop && (
+                <div className="w-full max-w-md pt-16">
+                  <div className="rounded-[12px] overflow-hidden shadow-2xl">
+                    <iframe 
+                      data-testid="embed-iframe" 
+                      style={{ borderRadius: '12px', display: 'block' }} 
+                      src="https://open.spotify.com/embed/track/6lcN1FC6PoiCvkq5om9G4o?utm_source=generator" 
+                      width="100%" 
+                      height="152" 
+                      frameBorder="0" 
+                      allowFullScreen 
+                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                    ></iframe>
+                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
 
             {/* Video Content */}
@@ -623,22 +632,24 @@ const App: React.FC = () => {
               />
               
               {/* Spotify Embed - Mobile Only after video */}
-              <div className="block md:hidden mt-32 max-w-[300px] mx-auto">
-                <div className="rounded-[12px] overflow-hidden shadow-2xl">
-                  <iframe 
-                    data-testid="embed-iframe" 
-                    style={{ borderRadius: '12px', display: 'block' }} 
-                    src="https://open.spotify.com/embed/track/6lcN1FC6PoiCvkq5om9G4o?utm_source=generator" 
-                    width="100%" 
-                    height="152" 
-                    frameBorder="0" 
-                    allowFullScreen 
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                  ></iframe>
+              {!isDesktop && (
+                <div className="mt-32 max-w-[300px] mx-auto">
+                  <div className="rounded-[12px] overflow-hidden shadow-2xl">
+                    <iframe 
+                      data-testid="embed-iframe" 
+                      style={{ borderRadius: '12px', display: 'block' }} 
+                      src="https://open.spotify.com/embed/track/6lcN1FC6PoiCvkq5om9G4o?utm_source=generator" 
+                      width="100%" 
+                      height="152" 
+                      frameBorder="0" 
+                      allowFullScreen 
+                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                    ></iframe>
+                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
           </div>
 

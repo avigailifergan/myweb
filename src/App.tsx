@@ -133,9 +133,12 @@ const InteractiveVideo: React.FC<{
       const observer = new IntersectionObserver(([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
-          observer.disconnect();
+        } else {
+          // Ensure video completely stops and unmounts when scrolled out of view
+          setIsPlaying(false);
+          setHasInteracted(false);
         }
-      }, { rootMargin: '300px' }); // Load slightly before it comes into view to pre-warm iframe
+      }, { rootMargin: '100px' });
       
       if (containerRef.current) {
         observer.observe(containerRef.current);
@@ -181,12 +184,9 @@ const InteractiveVideo: React.FC<{
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     if (isMobile) return;
 
+    // Immediately stop and destroy iframe to prevent background audio race conditions
     setIsPlaying(false);
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*'
-      );
-    }
+    setHasInteracted(false);
   };
 
   const handleOverlayClick = () => {

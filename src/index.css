@@ -56,16 +56,67 @@ section {
 
 /* Mobile Performance Optimizations */
 @media (max-width: 768px) {
-  /* Disable heavy animations & reduce motion */
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-  
   /* Less intense background filter for better performance on mobile */
   body::before {
     opacity: 0.005;
+  }
+
+  /* === Task 1 & 2: Singing section mobile improvements === */
+  
+  /* Full-width breakout for the first video */
+  .mobile-video-breakout {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    padding: 0 8px;
+    box-sizing: border-box;
+  }
+
+  .mobile-video-breakout .relative {
+    border-radius: 1.2rem !important;
+  }
+
+  /* Glow effect for prominent video */
+  .mobile-glow {
+    box-shadow: 0 10px 60px -10px rgba(212, 175, 55, 0.35),
+                0 0 40px -15px rgba(179, 128, 255, 0.25);
+  }
+
+  /* Shorts video mobile wrapper */
+  .mobile-shorts-wrapper {
+    background: linear-gradient(135deg, rgba(134, 61, 255, 0.08), rgba(253, 224, 71, 0.1));
+    border-radius: 2rem;
+    padding: 1.5rem 1rem;
+    margin-top: 2rem;
+    position: relative;
+  }
+
+  .mobile-shorts-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 2.1rem;
+    background: linear-gradient(135deg, #D4AF37, #b380ff, #D4AF37);
+    z-index: -1;
+    opacity: 0.3;
+  }
+
+  /* === Task 3: Reduce spacing in trumpet section === */
+  .mobile-trumpet-compact .spotify-mobile-embed {
+    margin-top: 1.5rem !important;
+  }
+
+  /* === Task 5: Voiceover section mobile improvements === */
+  .mobile-voiceover-video {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    padding: 0 4px;
+    box-sizing: border-box;
+    margin-top: 2rem;
+  }
+
+  .mobile-voiceover-video .relative {
+    border-radius: 1rem !important;
   }
 }

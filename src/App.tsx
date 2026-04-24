@@ -117,11 +117,6 @@ const InteractiveVideo: React.FC<{
   iframeClassName?: string,
   aspect?: string
 }> = ({ src, title, className = "", iframeClassName = "scale-105", aspect = "aspect-video" }) => {
-  const iframeRef = React.useRef<HTMLIFrameElement>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  // Extract YouTube video ID safely for thumbnail
   const videoId = src?.includes('/embed/') ? src.split('/embed/')[1]?.split('?')[0] : '';
   const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '';
 
@@ -131,6 +126,7 @@ const InteractiveVideo: React.FC<{
       enablejsapi: '1',
       mute: '0', 
       autoplay: autoplay ? '1' : '0',
+      playsinline: '1',
       modestbranding: '1',
       rel: '0',
       controls: '1',
@@ -140,56 +136,39 @@ const InteractiveVideo: React.FC<{
     return `${src}${separator}${params.toString()}`;
   };
 
-
-
-  const handleOverlayClick = () => {
-    setIsLoaded(true);
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'
-      );
-    }
-  };
+  const srcdoc = `
+    <style>
+      * { padding: 0; margin: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+      a { display: block; width: 100%; height: 100%; position: relative; cursor: pointer; }
+      img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+      .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+      a:hover .overlay { background: rgba(0,0,0,0.1); }
+      .btn { width: 64px; height: 64px; background: rgb(220, 38, 38); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); transition: transform 0.3s; }
+      a:hover .btn { transform: scale(1.1); }
+      svg { width: 28px; height: 28px; fill: white; margin-left: 4px; }
+    </style>
+    <a href="${buildUrl(true).replace(/&/g, '&amp;')}">
+      <img src="${thumbnailUrl}" alt="Play">
+      <div class="overlay">
+        <div class="btn">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>
+    </a>
+  `;
 
   return (
-    <div 
-      ref={containerRef}
-      className={`relative group/interactive-video w-full ${aspect} ${className}`}
-    >
+    <div className={`relative group/interactive-video w-full ${aspect} ${className}`}>
       <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 group-hover/interactive-video:scale-[1.01]">
-        {!isLoaded ? (
-          <>
-            {thumbnailUrl && (
-              <img
-                src={thumbnailUrl}
-                alt={title}
-                className="absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
-              />
-            )}
-            <div 
-              className="absolute inset-0 bg-black/25 flex items-center justify-center group-hover/interactive-video:bg-black/10 transition-colors cursor-pointer"
-              onClick={handleOverlayClick}
-            >
-              <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover/interactive-video:scale-110">
-                <svg viewBox="0 0 24 24" className="w-7 h-7 text-white ml-1" fill="currentColor">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <iframe 
-              ref={iframeRef}
-              src={buildUrl(true)} 
-              title={title}
-              className={`absolute inset-0 w-full h-full ${iframeClassName}`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowFullScreen
-            ></iframe>
-          </>
-        )}
+        <iframe 
+          srcDoc={srcdoc}
+          title={title}
+          className={`absolute inset-0 w-full h-full ${iframeClassName}`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          allowFullScreen
+          loading="lazy"
+        ></iframe>
       </div>
     </div>
   );
@@ -452,7 +431,7 @@ const App: React.FC = () => {
       {/* Singing Section - Gradient Transition */}
       <section id="singing" className="py-16 md:py-32 px-6 bg-gradient-to-b from-white to-lilac-50/50 relative">
         <div className="max-w-none mx-auto relative z-10">
-          <div className="grid md:grid-cols-[1.4fr_0.8fr] lg:grid-cols-[1.6fr_0.8fr] gap-12 lg:gap-20 items-center max-w-[1600px] mx-auto mb-24 px-6">
+          <div className="grid md:grid-cols-[1.4fr_0.8fr] lg:grid-cols-[1.6fr_0.8fr] gap-12 lg:gap-20 items-center max-w-[1600px] mx-auto mb-24">
             <motion.div
               initial={{ opacity: 0, filter: 'blur(12px)', y: 60 }}
               whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
@@ -477,19 +456,19 @@ const App: React.FC = () => {
               </div>
 
               {/* Smaller Videos Grid - Below the Prominent Video */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 w-full max-w-4xl mx-auto mt-2 md:mt-10 opacity-90 scale-95">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-[calc(100%+2rem)] -mx-4 md:mx-auto md:w-full max-w-4xl mt-4 md:mt-10">
                 <InteractiveVideo 
                   src="https://www.youtube.com/embed/prYFJvjaLQo"
                   title="אביגיל איפרגן - שירה 1"
                   aspect="aspect-video"
-                  className="w-full max-w-full mx-auto rounded-3xl"
+                  className="w-full max-w-full mx-auto rounded-[1.5rem] md:rounded-3xl"
                 />
                 
                 <InteractiveVideo 
                   src="https://www.youtube.com/embed/zI2CBlgEg3k"
                   title="אביגיל איפרגן - שירה 2"
                   aspect="aspect-video"
-                  className="w-full max-w-full mx-auto rounded-3xl"
+                  className="w-full max-w-full mx-auto rounded-[1.5rem] md:rounded-3xl"
                 />
               </div>
             </motion.div>
@@ -566,12 +545,14 @@ const App: React.FC = () => {
               transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
               className="order-2 md:order-1 mt-4 md:-mt-10"
             >
-              <InteractiveVideo 
-                src="https://www.youtube.com/embed/8hdDD3caMuQ"
-                title="נועה קירל - בריידזילה"
-                aspect="aspect-video"
-                className="w-full max-w-4xl mx-auto rounded-[2.5rem]"
-              />
+              <div className="-mx-6 w-[calc(100%+3rem)] max-w-none md:mx-auto md:w-full md:max-w-4xl">
+                <InteractiveVideo 
+                  src="https://www.youtube.com/embed/8hdDD3caMuQ"
+                  title="נועה קירל - בריידזילה"
+                  aspect="aspect-video"
+                  className="w-full max-w-full mx-auto rounded-[1rem] md:rounded-[2.5rem] shadow-2xl"
+                />
+              </div>
               
               {/* Spotify Embed - Mobile Only after video */}
               <div className="block md:hidden mt-10 max-w-[360px] mx-auto w-full px-2">

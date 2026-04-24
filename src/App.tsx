@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'motion/react';
-import LiteYouTubeEmbed from 'react-lite-youtube-embed';
-import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css';
 import { 
   Music, 
   Mic2, 
@@ -118,31 +116,30 @@ const InteractiveVideo: React.FC<{
   className?: string,
   iframeClassName?: string,
   aspect?: string
-}> = ({ src, title, className = "", aspect = "aspect-video" }) => {
-  const videoId = src?.includes('/embed/') ? src.split('/embed/')[1]?.split('?')[0] : '';
-  const playerParams = "playsinline=1&modestbranding=1&rel=0";
+}> = ({ src, title, className = "", iframeClassName = "scale-[1.03]", aspect = "aspect-video" }) => {
+  const buildUrl = () => {
+    if (!src) return '';
+    const params = new URLSearchParams({
+      playsinline: '1',
+      modestbranding: '1',
+      rel: '0',
+      origin: typeof window !== 'undefined' ? window.location.origin : ''
+    });
+    const separator = src.includes('?') ? '&' : '?';
+    return `${src}${separator}${params.toString()}`;
+  };
 
   return (
     <div className={`relative group/interactive-video w-full ${aspect} ${className}`}>
-      <style dangerouslySetInnerHTML={{__html: `
-        .lite-yt-wrapper-${videoId} .yt-lite {
-          width: 100% !important;
-          height: 100% !important;
-          max-width: none !important;
-          padding-bottom: 0 !important;
-          position: absolute;
-          inset: 0;
-        }
-        .lite-yt-wrapper-${videoId} .yt-lite::before {
-          content: none !important;
-        }
-      `}} />
-      <div className={`relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 hover:scale-[1.01] lite-yt-wrapper-${videoId}`}>
-        <LiteYouTubeEmbed 
-          id={videoId}
+      <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 hover:scale-[1.01]">
+        <iframe 
+          src={buildUrl()}
           title={title}
-          params={playerParams}
-        />
+          className={`absolute inset-0 w-full h-full ${iframeClassName}`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          allowFullScreen
+          loading="lazy"
+        ></iframe>
       </div>
     </div>
   );

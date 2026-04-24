@@ -117,52 +117,23 @@ const InteractiveVideo: React.FC<{
   iframeClassName?: string,
   aspect?: string
 }> = ({ src, title, className = "", iframeClassName = "scale-105", aspect = "aspect-video" }) => {
-  const videoId = src?.includes('/embed/') ? src.split('/embed/')[1]?.split('?')[0] : '';
-  const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '';
-
-  const buildUrl = (autoplay: boolean) => {
+  const buildUrl = () => {
     if (!src) return '';
     const params = new URLSearchParams({
-      enablejsapi: '1',
-      mute: '0', 
-      autoplay: autoplay ? '1' : '0',
       playsinline: '1',
       modestbranding: '1',
       rel: '0',
-      controls: '1',
       origin: typeof window !== 'undefined' ? window.location.origin : ''
     });
     const separator = src.includes('?') ? '&' : '?';
     return `${src}${separator}${params.toString()}`;
   };
 
-  const srcdoc = `
-    <style>
-      * { padding: 0; margin: 0; box-sizing: border-box; }
-      html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
-      a { display: block; width: 100%; height: 100%; position: relative; cursor: pointer; }
-      img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
-      .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
-      a:hover .overlay { background: rgba(0,0,0,0.1); }
-      .btn { width: 64px; height: 64px; background: rgb(220, 38, 38); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); transition: transform 0.3s; }
-      a:hover .btn { transform: scale(1.1); }
-      svg { width: 28px; height: 28px; fill: white; margin-left: 4px; }
-    </style>
-    <a href="${buildUrl(true).replace(/&/g, '&amp;')}">
-      <img src="${thumbnailUrl}" alt="Play">
-      <div class="overlay">
-        <div class="btn">
-          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        </div>
-      </div>
-    </a>
-  `;
-
   return (
     <div className={`relative group/interactive-video w-full ${aspect} ${className}`}>
-      <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 group-hover/interactive-video:scale-[1.01]">
+      <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 hover:scale-[1.01]">
         <iframe 
-          srcDoc={srcdoc}
+          src={buildUrl()}
           title={title}
           className={`absolute inset-0 w-full h-full ${iframeClassName}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 

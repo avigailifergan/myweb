@@ -120,30 +120,10 @@ const InteractiveVideo: React.FC<{
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
 
   // Extract YouTube video ID safely for thumbnail
   const videoId = src?.includes('/embed/') ? src.split('/embed/')[1]?.split('?')[0] : '';
   const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '';
-
-  useEffect(() => {
-    try {
-      const observer = new IntersectionObserver(([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observer.disconnect();
-        }
-      }, { rootMargin: '50px' });
-      
-      if (containerRef.current) {
-        observer.observe(containerRef.current);
-      }
-      return () => observer.disconnect();
-    } catch(e) {
-      // Fallback for older browsers
-      setIsInView(true);
-    }
-  }, []);
 
   const buildUrl = (autoplay: boolean) => {
     if (!src) return '';
@@ -160,31 +140,7 @@ const InteractiveVideo: React.FC<{
     return `${src}${separator}${params.toString()}`;
   };
 
-  const handleMouseEnter = () => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    if (isMobile) return; // Completely block hover logic on mobile
 
-    if (!isLoaded) {
-      setIsLoaded(true);
-      return;
-    }
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'
-      );
-    }
-  };
-
-  const handleMouseLeave = () => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    if (isMobile) return;
-
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*'
-      );
-    }
-  };
 
   const handleOverlayClick = () => {
     setIsLoaded(true);
@@ -199,44 +155,40 @@ const InteractiveVideo: React.FC<{
     <div 
       ref={containerRef}
       className={`relative group/interactive-video w-full ${aspect} ${className}`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 group-hover/interactive-video:scale-[1.01]">
-        {isInView && (
-          !isLoaded ? (
-            <>
-              {thumbnailUrl && (
-                <img
-                  src={thumbnailUrl}
-                  alt={title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  loading="lazy"
-                />
-              )}
-              <div 
-                className="absolute inset-0 bg-black/25 flex items-center justify-center group-hover/interactive-video:bg-black/10 transition-colors cursor-pointer"
-                onClick={handleOverlayClick}
-              >
-                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover/interactive-video:scale-110">
-                  <svg viewBox="0 0 24 24" className="w-7 h-7 text-white ml-1" fill="currentColor">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </div>
+        {!isLoaded ? (
+          <>
+            {thumbnailUrl && (
+              <img
+                src={thumbnailUrl}
+                alt={title}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+              />
+            )}
+            <div 
+              className="absolute inset-0 bg-black/25 flex items-center justify-center group-hover/interactive-video:bg-black/10 transition-colors cursor-pointer"
+              onClick={handleOverlayClick}
+            >
+              <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover/interactive-video:scale-110">
+                <svg viewBox="0 0 24 24" className="w-7 h-7 text-white ml-1" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
               </div>
-            </>
-          ) : (
-            <>
-              <iframe 
-                ref={iframeRef}
-                src={buildUrl(true)} 
-                title={title}
-                className={`absolute inset-0 w-full h-full ${iframeClassName}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowFullScreen
-              ></iframe>
-            </>
-          )
+            </div>
+          </>
+        ) : (
+          <>
+            <iframe 
+              ref={iframeRef}
+              src={buildUrl(true)} 
+              title={title}
+              className={`absolute inset-0 w-full h-full ${iframeClassName}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowFullScreen
+            ></iframe>
+          </>
         )}
       </div>
     </div>
@@ -498,7 +450,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Singing Section - Gradient Transition */}
-      <section id="singing" className="py-32 px-6 bg-gradient-to-b from-white to-lilac-50/50 relative">
+      <section id="singing" className="py-16 md:py-32 px-6 bg-gradient-to-b from-white to-lilac-50/50 relative">
         <div className="max-w-none mx-auto relative z-10">
           <div className="grid md:grid-cols-[1.4fr_0.8fr] lg:grid-cols-[1.6fr_0.8fr] gap-12 lg:gap-20 items-center max-w-[1600px] mx-auto mb-24 px-6">
             <motion.div
@@ -515,17 +467,17 @@ const App: React.FC = () => {
               </p>
 
               {/* Enlarged Prominent Video */}
-              <div className="w-full max-w-5xl mx-auto mt-20 relative z-20 mb-12">
+              <div className="-mx-6 w-[calc(100%+3rem)] max-w-none md:mx-auto md:w-full md:max-w-5xl mt-12 md:mt-20 relative z-20 mb-8 md:mb-12">
                 <InteractiveVideo 
                   src="https://www.youtube.com/embed/lJDnYfQ8KIk"
                   title="אביגיל איפרגן - שירה לכל אירוע"
                   aspect="aspect-video"
-                  className="w-full max-w-full mx-auto rounded-[2.5rem] shadow-2xl"
+                  className="w-full max-w-full mx-auto rounded-[1rem] md:rounded-[2.5rem] shadow-2xl"
                 />
               </div>
 
               {/* Smaller Videos Grid - Below the Prominent Video */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mx-auto mt-10 opacity-90 scale-95">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 w-full max-w-4xl mx-auto mt-2 md:mt-10 opacity-90 scale-95">
                 <InteractiveVideo 
                   src="https://www.youtube.com/embed/prYFJvjaLQo"
                   title="אביגיל איפרגן - שירה 1"
@@ -564,13 +516,13 @@ const App: React.FC = () => {
       </section>
 
       {/* Trumpet Section - Vibrant Purple Theme */}
-      <section id="trumpet" className="py-24 md:py-40 px-6 bg-gradient-to-br from-lilac-700 via-lilac-600 to-lilac-500 overflow-hidden relative border-y border-lilac-400/30">
+      <section id="trumpet" className="py-16 md:py-40 px-6 bg-gradient-to-br from-lilac-700 via-lilac-600 to-lilac-500 overflow-hidden relative border-y border-lilac-400/30">
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-lilac-500 rounded-full blur-[150px]"></div>
           <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-lilac-700 rounded-full blur-[130px]"></div>
         </div>
         <div className="max-w-[1500px] mx-auto relative z-10">
-          <div className="grid md:grid-cols-[1.4fr_0.6fr] gap-12 md:gap-20 items-center mb-24">
+          <div className="grid md:grid-cols-[1.4fr_0.6fr] gap-8 md:gap-20 items-center mb-8 md:mb-24">
             {/* Text Content */}
             <motion.div
               initial={{ opacity: 0, filter: 'blur(8px)', x: -50 }}
@@ -612,7 +564,7 @@ const App: React.FC = () => {
               whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-              className="order-2 md:order-1 md:-mt-10"
+              className="order-2 md:order-1 mt-4 md:-mt-10"
             >
               <InteractiveVideo 
                 src="https://www.youtube.com/embed/8hdDD3caMuQ"
@@ -622,14 +574,14 @@ const App: React.FC = () => {
               />
               
               {/* Spotify Embed - Mobile Only after video */}
-              <div className="block md:hidden mt-32 max-w-[300px] mx-auto">
+              <div className="block md:hidden mt-10 max-w-[360px] mx-auto w-full px-2">
                 <div className="rounded-[12px] overflow-hidden shadow-2xl">
                   <iframe 
                     data-testid="embed-iframe" 
                     style={{ borderRadius: '12px', display: 'block' }} 
                     src="https://open.spotify.com/embed/track/6lcN1FC6PoiCvkq5om9G4o?utm_source=generator" 
                     width="100%" 
-                    height="152" 
+                    height="80" 
                     frameBorder="0" 
                     allowFullScreen 
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
@@ -647,12 +599,11 @@ const App: React.FC = () => {
             whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 max-w-[1500px] mx-auto px-4"
+            className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-[1000px] mx-auto px-4"
           >
             {[
               { id: 'F8VSti0LW0Q', title: 'אביגיל איפרגן' },
-              { id: '7wT_hmpmTcg', title: 'אביגיל איפרגן' },
-              { id: 'DMwOfwmBBmY', title: 'אביגיל איפרגן' }
+              { id: '7wT_hmpmTcg', title: 'אביגיל איפרגן' }
             ].map((video, i) => (
               <InteractiveVideo 
                 key={i}
@@ -667,7 +618,7 @@ const App: React.FC = () => {
       </section>
 
       {/* Acting Section - Gradient Transition */}
-      <section id="acting" className="py-32 px-6 bg-gradient-to-b from-[#f0e9ff] via-white to-white relative">
+      <section id="acting" className="py-16 md:py-32 px-6 bg-gradient-to-b from-[#f0e9ff] via-white to-white relative">
         <div className="max-w-6xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, filter: 'blur(12px)', y: 60 }}
@@ -680,7 +631,7 @@ const App: React.FC = () => {
             <p className="text-xl text-lilac-700 leading-relaxed mb-12 font-body font-light">
               שירותי משחק מקצועיים לסרטי תדמית, פרסומות והפקות וידאו. בניית דמות המעבירה את המסר העסקי בצורה מדויקת, אמינה ומרשימה.
             </p>
-            <div className="mb-16 max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="mb-10 md:mb-16 max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-10">
               <InteractiveVideo 
                 src="https://www.youtube.com/embed/EU5siooDAwc"
                 title="משחק ותדמית - סרטון 1"
@@ -695,7 +646,7 @@ const App: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center justify-center max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-center justify-center max-w-7xl mx-auto">
               {[
                 { id: '2uGdlgGIVxg', title: 'משחק ותדמית 1' },
                 { id: 'fTEVJsd5wwU', title: 'משחק ותדמית 2' },
@@ -715,7 +666,7 @@ const App: React.FC = () => {
       </section>
 
       {/* Voiceover Section - Vibrant Purple Theme */}
-      <section id="voiceover" className="py-32 px-6 bg-gradient-to-br from-lilac-800 via-lilac-700 to-lilac-600 text-white overflow-hidden relative border-y border-lilac-500/20">
+      <section id="voiceover" className="py-16 md:py-32 px-6 bg-gradient-to-br from-lilac-800 via-lilac-700 to-lilac-600 text-white overflow-hidden relative border-y border-lilac-500/20">
         <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
           <div className="absolute top-10 left-10 w-96 h-96 bg-lilac-400 rounded-full blur-[120px]"></div>
           <div className="absolute bottom-10 right-10 w-[30rem] h-[30rem] bg-lilac-600 rounded-full blur-[150px]"></div>
@@ -750,14 +701,16 @@ const App: React.FC = () => {
               whileInView={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-              className="relative pt-12 md:pt-20"
+              className="relative pt-4 md:pt-20"
             >
-              <InteractiveVideo 
-                src="https://www.youtube.com/embed/KvvsnMuVZKM"
-                title="קריינות ומוסיקה לפרסומות"
-                aspect="aspect-video"
-                className="rounded-[2.5rem]"
-              />
+              <div className="-mx-6 w-[calc(100%+3rem)] max-w-none md:mx-auto md:w-full">
+                <InteractiveVideo 
+                  src="https://www.youtube.com/embed/KvvsnMuVZKM"
+                  title="קריינות ומוסיקה לפרסומות"
+                  aspect="aspect-video"
+                  className="rounded-[1rem] md:rounded-[2.5rem]"
+                />
+              </div>
               <div className="absolute -bottom-8 -right-8 w-64 h-64 bg-lilac-500 rounded-full -z-10 blur-[100px] opacity-30"></div>
             </motion.div>
           </div>
@@ -766,7 +719,7 @@ const App: React.FC = () => {
 
 
       {/* Contact Section - Fully Lilac Wrapped */}
-      <section id="contact" className="py-20 md:py-32 px-4 md:px-6 bg-lilac-50/80 relative">
+      <section id="contact" className="py-16 md:py-32 px-4 md:px-6 bg-lilac-50/80 relative">
         <div className="max-w-7xl mx-auto relative z-10">
         <motion.div 
           initial={{ opacity: 0, filter: 'blur(10px)', y: 40 }}

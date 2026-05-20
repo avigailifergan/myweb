@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'motion/react';
 import { 
   Music, 
@@ -116,30 +116,164 @@ const InteractiveVideo: React.FC<{
   className?: string,
   iframeClassName?: string,
   aspect?: string
-}> = ({ src, title, className = "", iframeClassName = "scale-[1.03]", aspect = "aspect-video" }) => {
+}> = ({ src, title, className = "", iframeClassName = "scale-[1.06]", aspect = "aspect-video" }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const videoId = src ? (
+    src.includes('/embed/') 
+      ? src.split('/embed/')[1]?.split('?')[0] 
+      : src.includes('v=') 
+        ? src.split('v=')[1]?.split('&')[0]
+        : src.split('/').pop()?.split('?')[0]
+  ) : '';
+
+  const [thumbnailUrl, setThumbnailUrl] = useState(
+    videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : ''
+  );
+  const [isHighRes, setIsHighRes] = useState(false);
+
+  useEffect(() => {
+    if (!videoId) return;
+
+    // Default immediately to hqdefault so there is no blank state
+    setThumbnailUrl(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
+    setIsHighRes(false);
+
+    const maxresUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    const sdUrl = `https://img.youtube.com/vi/${videoId}/sddefault.jpg`;
+
+    const checkImage = (url: string, onSuccess: () => void, onError: () => void) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => {
+        if (img.width > 120) {
+          onSuccess();
+        } else {
+          onError();
+        }
+      };
+      img.onerror = onError;
+    };
+
+    // First try maxresdefault (highest resolution, 16:9, no letterboxes)
+    checkImage(
+      maxresUrl,
+      () => {
+        setThumbnailUrl(maxresUrl);
+        setIsHighRes(true);
+      },
+      () => {
+        // If maxres fails, try sddefault (640x480, 4:3, letterboxed)
+        checkImage(
+          sdUrl,
+          () => {
+            setThumbnailUrl(sdUrl);
+            setIsHighRes(false);
+          },
+          () => {
+            // Keep hqdefault (480x360, 4:3, letterboxed)
+            setIsHighRes(false);
+          }
+        );
+      }
+    );
+  }, [videoId]);
+
   const buildUrl = () => {
     if (!src) return '';
     const params = new URLSearchParams({
       playsinline: '1',
       modestbranding: '1',
       rel: '0',
+      autoplay: '1',
       origin: typeof window !== 'undefined' ? window.location.origin : ''
     });
     const separator = src.includes('?') ? '&' : '?';
     return `${src}${separator}${params.toString()}`;
   };
 
+  const isVertical = aspect.includes('9/15.7') || aspect.includes('9/16');
+
+  // Calibrate base scale to crop out black borders
+  const baseScale = isVertical ? (isHighRes ? 1.15 : 1.42) : 1.10;
+  const currentScale = isHovered ? baseScale * 1.05 : baseScale;
+
   return (
-    <div className={`relative group/interactive-video w-full ${aspect} ${className}`}>
+    <div ref={containerRef} className={`relative group/interactive-video w-full ${aspect} ${className}`}>
       <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 hover:scale-[1.01]">
-        <iframe 
-          src={buildUrl()}
-          title={title}
-          className={`absolute inset-0 w-full h-full ${iframeClassName}`}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-          allowFullScreen
-          loading="lazy"
-        ></iframe>
+        {isPlaying ? (
+          <iframe 
+            src={buildUrl()}
+            title={title}
+            className={`absolute inset-0 w-full h-full ${iframeClassName}`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen
+          ></iframe>
+        ) : (
+          <button 
+            onClick={() => setIsPlaying(true)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            className="absolute inset-0 w-full h-full flex items-center justify-center cursor-pointer overflow-hidden focus:outline-none"
+            aria-label={`Play ${title}`}
+          >
+            {/* Thumbnail Image */}
+            {thumbnailUrl && isVisible ? (
+              <img 
+                src={thumbnailUrl} 
+                alt={title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700"
+                style={{ transform: `scale(${currentScale})` }}
+                loading="lazy"
+              />
+            ) : (
+              <div className="absolute inset-0 w-full h-full bg-lilac-100/30 animate-pulse" />
+            )}
+            
+            {/* Premium Dark Overlay */}
+            <div className="absolute inset-0 bg-black/20 group-hover/interactive-video:bg-black/35 transition-colors duration-300 z-10" />
+
+            {/* Custom glowing play button */}
+            <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg transition-all duration-300 group-hover/interactive-video:scale-110 group-hover/interactive-video:bg-[#ff0000]/90 group-hover/interactive-video:border-[#ff0000] relative z-20">
+              <div className="absolute inset-0 rounded-full bg-white/20 animate-ping opacity-75 group-hover/interactive-video:bg-[#ff0000]/45" />
+              <Play size={24} className="text-white fill-white ml-1 transition-colors" />
+            </div>
+
+            {/* Vertical Video Header Overlay (Matches YouTube Shorts Premium Feel) */}
+            {isVertical && (
+              <div className="absolute top-7 right-7 left-7 flex items-center gap-3 text-right z-20 text-white drop-shadow-md">
+                <img 
+                  src="/images/hero/portrait-mobile.webp" 
+                  alt="Avigail Ifergan" 
+                  className="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md"
+                />
+                <div>
+                  <h4 className="font-headline font-semibold text-sm leading-tight text-white">{title}</h4>
+                  <p className="font-body text-xs text-white/80">Avigail Ifergan</p>
+                </div>
+              </div>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -231,7 +365,7 @@ const App: React.FC = () => {
       />
       
       {/* Background Decor with Parallax - More Vibrant Purple */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 hidden md:block">
         <motion.div 
           style={{ y: backgroundY1 }}
           className="absolute top-[-10%] left-[-10%] w-[55%] h-[55%] bg-lilac-400/20 rounded-full blur-[120px]" 
@@ -456,6 +590,7 @@ const App: React.FC = () => {
                 title="Michelle - Eurovision 2026"
                 aspect="aspect-[9/15.7]"
                 className="max-w-[400px] mx-auto rounded-[2.5rem]"
+                iframeClassName="scale-[1.15]"
               />
               <div className="absolute -bottom-8 -right-8 w-48 h-48 bg-lilac-100 rounded-full -z-10 blur-3xl opacity-60"></div>
             </motion.div>
@@ -600,9 +735,9 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-center justify-center max-w-7xl mx-auto">
               {[
-                { id: '2uGdlgGIVxg', title: 'משחק ותדמית 1' },
-                { id: 'fTEVJsd5wwU', title: 'משחק ותדמית 2' },
-                { id: 'JC-7pI5MiAk', title: 'משחק ותדמית 3' }
+                { id: '2uGdlgGIVxg', title: 'קרפטלי - פרידה קאלו' },
+                { id: 'wPfDuMW6VdE', title: 'יוסי אברהמי נדל"ן' },
+                { id: '9B714_PzWLA', title: 'אמריקן לייזר' }
               ].map((video, i) => (
                 <InteractiveVideo 
                   key={i}
@@ -610,6 +745,7 @@ const App: React.FC = () => {
                   title={video.title}
                   aspect="aspect-[9/15.7]"
                   className="max-w-[420px] mx-auto rounded-[2rem]"
+                  iframeClassName="scale-[1.15]"
                 />
               ))}
             </div>

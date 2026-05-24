@@ -121,9 +121,6 @@ const InteractiveVideo: React.FC<{
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  const touchStartX = useRef(0);
-  const touchStartY = useRef(0);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -220,25 +217,9 @@ const InteractiveVideo: React.FC<{
   const baseScale = isVertical ? (isHighRes ? 1.15 : 1.42) : 1.10;
   const currentScale = isHovered ? baseScale * 1.05 : baseScale;
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const deltaX = Math.abs(e.changedTouches[0].clientX - touchStartX.current);
-    const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
-
-    // If it's a tap (minimal movement during touch)
-    if (deltaX < 10 && deltaY < 10) {
-      e.preventDefault(); // Prevents delayed click & mobile hover emulation
-      setIsPlaying(true);
-    }
-  };
-
   return (
     <div ref={containerRef} className={`relative group/interactive-video w-full ${aspect} ${className}`}>
-      <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 hover:scale-[1.01]">
+      <div className={`relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 ${isHovered ? 'scale-[1.01]' : ''}`}>
         {isPlaying ? (
           <iframe 
             src={buildUrl()}
@@ -250,8 +231,6 @@ const InteractiveVideo: React.FC<{
         ) : (
           <button 
             onClick={() => setIsPlaying(true)}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             className="absolute inset-0 w-full h-full flex items-center justify-center cursor-pointer overflow-hidden focus:outline-none"
@@ -271,11 +250,11 @@ const InteractiveVideo: React.FC<{
             )}
             
             {/* Premium Dark Overlay */}
-            <div className="absolute inset-0 bg-black/20 group-hover/interactive-video:bg-black/35 transition-colors duration-300 z-10" />
+            <div className={`absolute inset-0 bg-black/20 transition-colors duration-300 z-10 ${isHovered ? 'bg-black/35' : ''}`} />
 
             {/* Custom glowing play button */}
-            <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg transition-all duration-300 group-hover/interactive-video:scale-110 group-hover/interactive-video:bg-[#ff0000]/90 group-hover/interactive-video:border-[#ff0000] relative z-20">
-              <div className="absolute inset-0 rounded-full bg-white/20 animate-ping opacity-75 group-hover/interactive-video:bg-[#ff0000]/45" />
+            <div className={`w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg transition-all duration-300 relative z-20 ${isHovered ? 'scale-110 bg-[#ff0000]/90 border-[#ff0000]' : ''}`}>
+              <div className={`absolute inset-0 rounded-full bg-white/20 animate-ping opacity-75 ${isHovered ? 'bg-[#ff0000]/45' : ''}`} />
               <Play size={24} className="text-white fill-white ml-1 transition-colors" />
             </div>
 

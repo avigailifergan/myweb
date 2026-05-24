@@ -121,6 +121,9 @@ const InteractiveVideo: React.FC<{
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -217,6 +220,22 @@ const InteractiveVideo: React.FC<{
   const baseScale = isVertical ? (isHighRes ? 1.15 : 1.42) : 1.10;
   const currentScale = isHovered ? baseScale * 1.05 : baseScale;
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const deltaX = Math.abs(e.changedTouches[0].clientX - touchStartX.current);
+    const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
+
+    // If it's a tap (minimal movement during touch)
+    if (deltaX < 10 && deltaY < 10) {
+      e.preventDefault(); // Prevents delayed click & mobile hover emulation
+      setIsPlaying(true);
+    }
+  };
+
   return (
     <div ref={containerRef} className={`relative group/interactive-video w-full ${aspect} ${className}`}>
       <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 hover:scale-[1.01]">
@@ -231,6 +250,8 @@ const InteractiveVideo: React.FC<{
         ) : (
           <button 
             onClick={() => setIsPlaying(true)}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             className="absolute inset-0 w-full h-full flex items-center justify-center cursor-pointer overflow-hidden focus:outline-none"

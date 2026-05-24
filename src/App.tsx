@@ -117,163 +117,29 @@ const InteractiveVideo: React.FC<{
   iframeClassName?: string,
   aspect?: string
 }> = ({ src, title, className = "", iframeClassName = "scale-[1.06]", aspect = "aspect-video" }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '300px' }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const videoId = src ? (
-    src.includes('/embed/') 
-      ? src.split('/embed/')[1]?.split('?')[0] 
-      : src.includes('v=') 
-        ? src.split('v=')[1]?.split('&')[0]
-        : src.split('/').pop()?.split('?')[0]
-  ) : '';
-
-  const [thumbnailUrl, setThumbnailUrl] = useState(
-    videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : ''
-  );
-  const [isHighRes, setIsHighRes] = useState(false);
-
-  useEffect(() => {
-    if (!videoId) return;
-
-    // Default immediately to hqdefault so there is no blank state
-    setThumbnailUrl(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
-    setIsHighRes(false);
-
-    const maxresUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-    const sdUrl = `https://img.youtube.com/vi/${videoId}/sddefault.jpg`;
-
-    const checkImage = (url: string, onSuccess: () => void, onError: () => void) => {
-      const img = new Image();
-      img.src = url;
-      img.onload = () => {
-        if (img.width > 120) {
-          onSuccess();
-        } else {
-          onError();
-        }
-      };
-      img.onerror = onError;
-    };
-
-    // First try maxresdefault (highest resolution, 16:9, no letterboxes)
-    checkImage(
-      maxresUrl,
-      () => {
-        setThumbnailUrl(maxresUrl);
-        setIsHighRes(true);
-      },
-      () => {
-        // If maxres fails, try sddefault (640x480, 4:3, letterboxed)
-        checkImage(
-          sdUrl,
-          () => {
-            setThumbnailUrl(sdUrl);
-            setIsHighRes(false);
-          },
-          () => {
-            // Keep hqdefault (480x360, 4:3, letterboxed)
-            setIsHighRes(false);
-          }
-        );
-      }
-    );
-  }, [videoId]);
-
   const buildUrl = () => {
     if (!src) return '';
     const params = new URLSearchParams({
       playsinline: '1',
       modestbranding: '1',
       rel: '0',
-      autoplay: '1',
       origin: typeof window !== 'undefined' ? window.location.origin : ''
     });
     const separator = src.includes('?') ? '&' : '?';
     return `${src}${separator}${params.toString()}`;
   };
 
-  const isVertical = aspect.includes('9/15.7') || aspect.includes('9/16');
-
-  // Calibrate base scale to crop out black borders
-  const baseScale = isVertical ? (isHighRes ? 1.15 : 1.42) : 1.10;
-  const currentScale = isHovered ? baseScale * 1.05 : baseScale;
-
   return (
-    <div ref={containerRef} className={`relative group/interactive-video w-full ${aspect} ${className}`}>
-      <div className={`relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10 transition-transform duration-500 ${isHovered ? 'scale-[1.01]' : ''}`}>
-        {isPlaying ? (
-          <iframe 
-            src={buildUrl()}
-            title={title}
-            className={`absolute inset-0 w-full h-full ${iframeClassName}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowFullScreen
-          ></iframe>
-        ) : (
-          <button 
-            onClick={() => setIsPlaying(true)}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            className="absolute inset-0 w-full h-full flex items-center justify-center cursor-pointer overflow-hidden focus:outline-none"
-            aria-label={`Play ${title}`}
-          >
-            {/* Thumbnail Image */}
-            {thumbnailUrl && isVisible ? (
-              <img 
-                src={thumbnailUrl} 
-                alt={title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700"
-                style={{ transform: `scale(${currentScale})` }}
-                loading="lazy"
-              />
-            ) : (
-              <div className="absolute inset-0 w-full h-full bg-lilac-100/30 animate-pulse" />
-            )}
-            
-            {/* Premium Dark Overlay */}
-            <div className={`absolute inset-0 bg-black/20 transition-colors duration-300 z-10 ${isHovered ? 'bg-black/35' : ''}`} />
-
-            {/* Custom glowing play button */}
-            <div className={`w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg transition-all duration-300 relative z-20 ${isHovered ? 'scale-110 bg-[#ff0000]/90 border-[#ff0000]' : ''}`}>
-              <div className={`absolute inset-0 rounded-full bg-white/20 animate-ping opacity-75 ${isHovered ? 'bg-[#ff0000]/45' : ''}`} />
-              <Play size={24} className="text-white fill-white ml-1 transition-colors" />
-            </div>
-
-            {/* Vertical Video Header Overlay (Matches YouTube Shorts Premium Feel) */}
-            {isVertical && (
-              <div className="absolute top-7 right-7 left-7 flex items-center gap-3 text-right z-20 text-white drop-shadow-md">
-                <img 
-                  src="/images/hero/portrait-mobile.webp" 
-                  alt="Avigail Ifergan" 
-                  className="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md"
-                />
-                <div>
-                  <h4 className="font-headline font-semibold text-sm leading-tight text-white">{title}</h4>
-                  <p className="font-body text-xs text-white/80">Avigail Ifergan</p>
-                </div>
-              </div>
-            )}
-          </button>
-        )}
+    <div className={`relative w-full ${aspect} ${className}`}>
+      <div className="relative w-full h-full bg-black rounded-[inherit] overflow-hidden border-4 border-[#D4AF37] shadow-[0_20px_50px_-12px_rgba(168,128,255,0.3)] z-10">
+        <iframe 
+          src={buildUrl()}
+          title={title}
+          className={`absolute inset-0 w-full h-full ${iframeClassName}`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          allowFullScreen
+          loading="lazy"
+        ></iframe>
       </div>
     </div>
   );

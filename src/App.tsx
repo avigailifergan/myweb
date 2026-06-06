@@ -323,7 +323,7 @@ const App: React.FC = () => {
                 <source srcSet={IMAGES.trumpet.webp} type="image/webp" />
                 <img 
                   src={IMAGES.trumpet.jpg} 
-                  alt="" 
+                  alt="אביגיל איפרגן חצוצרנית" 
                   className="w-full h-full object-cover object-top opacity-30"
                   loading="lazy"
                 />
@@ -337,7 +337,7 @@ const App: React.FC = () => {
               <source srcSet={IMAGES.portrait.webp} type="image/webp" />
               <img 
                 src={IMAGES.portrait.jpg} 
-                alt="" 
+                alt="אביגיל איפרגן זמרת, שחקנית, מפיקה וקריינית" 
                 className="w-full h-full object-cover opacity-60 md:opacity-50"
                 fetchPriority="high"
               />
@@ -350,7 +350,7 @@ const App: React.FC = () => {
                 <source srcSet={IMAGES.singing.webp} type="image/webp" />
                 <img 
                   src={IMAGES.singing.jpg} 
-                  alt="" 
+                  alt="אביגיל איפרגן זמרת בהופעה חיה" 
                   className="w-full h-full object-cover object-bottom opacity-30 scale-x-[-1]"
                   loading="lazy"
                 />
@@ -382,9 +382,9 @@ const App: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <div className="inline-block px-6 py-3 bg-white/60 backdrop-blur-md rounded-2xl border border-white/20 shadow-sm mb-7 md:mb-12">
-              <p className="text-lg md:text-2xl font-body font-light text-lilac-700 tracking-[0.12em]">
+              <h2 className="text-lg md:text-2xl font-body font-light text-lilac-700 tracking-[0.12em] m-0">
                 מוסיקאית<span className="mx-1 md:mx-2">•</span>שחקנית<span className="mx-1 md:mx-2">•</span>מפיקה
-              </p>
+              </h2>
             </div>
           </motion.div>
         </div>
@@ -413,7 +413,7 @@ const App: React.FC = () => {
               <h2 className="text-5xl md:text-6xl font-headline font-light mb-6 text-lilac-900 leading-tight">שירה לכל אירוע</h2>
               <div className="h-[1.5px] w-72 bg-gradient-to-r from-transparent via-[#FDE047] to-transparent mx-auto mb-10 shadow-[0_0_15px_rgba(253,224,71,0.5)]"></div>
               <p className="text-xl text-lilac-800 leading-relaxed font-body font-light max-w-2xl mx-auto mb-10">
-                הופעות שירה חיה המותאמות אישית לכל אירוע. מרגעים מרגשים בחופה ועד לאווירה יוקרתית בקבלות פנים. שילוב של ווקאליות עוצמתית ונוכחות בימתית המביאה איתה רגש עמוק לכל רגע.
+                זמרת מקצועית המופיעה באירועים. הופעות שירה חיה המותאמות אישית לכל אירוע. מרגעים מרגשים בחופה ועד לאווירה יוקרתית בקבלות פנים. שילוב של ווקאליות עוצמתית ונוכחות בימתית המביאה איתה רגש עמוק לכל רגע.
               </p>
 
               {/* Enlarged Prominent Video */}
@@ -487,7 +487,7 @@ const App: React.FC = () => {
               </h2>
               <div className="h-[1.5px] w-72 bg-gradient-to-r from-transparent via-[#FDE047] to-transparent mx-auto mb-10 shadow-[0_0_15px_rgba(253,224,71,0.5)]"></div>
               <p className="text-xl text-lilac-100 leading-relaxed mb-6 md:mb-10 font-body font-light max-w-2xl mx-auto">
-                חוויה ויזואלית ומוסיקלית יוצאת דופן לאירועי יוקרה. הרכבי תנועה אמנותיים המשלבים נגינה חיה בחצוצרה, כוריאוגרפיה מוקפדת ותלבושות מרהיבות, המעניקים לאירוע נופך של אלגנטיות וחדשנות.
+                כחצוצרנית וכמפיקה של הרכבים אני מציעה חוויה ויזואלית ומוסיקלית יוצאת דופן לאירועי יוקרה. הרכבי תנועה אמנותיים המשלבים נגינה חיה בחצוצרה, כוריאוגרפיה מוקפדת ותלבושות מרהיבות, המעניקים לאירוע נופך של אלגנטיות וחדשנות.
               </p>
               
               {/* Spotify Embed - Desktop Hidden on bottom to be shown in column */}
@@ -582,7 +582,7 @@ const App: React.FC = () => {
             <h2 className="text-5xl md:text-6xl font-headline font-light mb-6 text-lilac-900">משחק ותדמית לעסקים</h2>
             <div className="h-[1.5px] w-72 bg-gradient-to-r from-transparent via-[#FDE047] to-transparent mx-auto mb-10 shadow-[0_0_15px_rgba(253,224,71,0.5)]"></div>
             <p className="text-xl text-lilac-700 leading-relaxed mb-12 font-body font-light">
-              שירותי משחק מקצועיים לסרטי תדמית, פרסומות והפקות וידאו. בניית דמות המעבירה את המסר העסקי בצורה מדויקת, אמינה ומרשימה.
+              כשחקנית אני מציעה שירותי משחק מקצועיים לסרטי תדמית, פרסומות והפקות וידאו. בניית דמות המעבירה את המסר העסקי בצורה מדויקת, אמינה ומרשימה.
             </p>
             <div className="mb-10 md:mb-16 max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-10">
               <InteractiveVideo 
@@ -638,7 +638,7 @@ const App: React.FC = () => {
               <h2 className="text-5xl md:text-6xl font-headline font-light mb-6 leading-tight">קריינות ומוסיקה לפרסומות</h2>
               <div className="h-[1.5px] w-72 bg-gradient-to-r from-transparent via-[#FDE047] to-transparent mx-auto mb-10 shadow-[0_0_15px_rgba(253,224,71,0.5)]"></div>
               <p className="text-xl text-lilac-100 leading-relaxed mb-10 font-body font-light max-w-2xl mx-auto">
-                הקלטות קריינות מקצועיות למגוון מדיות - רדיו, טלוויזיה, דיגיטל ומערכות טלפוניה. יצירת מוסיקה מקורית וג'ינגלים המותאמים אישית למותג שלך, המעניקים לו זהות קולית ייחודית וזכירה.
+                קריינית מקצועית למגוון מדיות - רדיו, טלוויזיה, דיגיטל ומערכות טלפוניה. יצירת מוסיקה מקורית וג'ינגלים המותאמים אישית למותג שלך, המעניקים לו זהות קולית ייחודית וזכירה.
               </p>
               <div className="space-y-4 max-w-md mx-auto">
                 {[

@@ -61,6 +61,7 @@ const SECTIONS = [
 
 const AudioPlayerItem: React.FC<{ title: string, src: string, duration?: string }> = ({ title, src, duration }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
   const audioRef = React.useRef<HTMLAudioElement>(null);
 
   const togglePlay = () => {
@@ -78,33 +79,65 @@ const AudioPlayerItem: React.FC<{ title: string, src: string, duration?: string 
     }
   };
 
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const progressPercent = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+      setProgress(progressPercent || 0);
+    }
+  };
+
   return (
     <div 
-      className={`rounded-2xl p-5 transition-all relative overflow-hidden group shadow-lg shadow-lilac-500/5 ${
-        isPlaying ? 'bg-gradient-to-r from-[#D4AF37] to-[#FDE047] scale-[1.01]' : 'bg-[#FDE047]/90 hover:bg-[#FDE047]'
+      className={`rounded-[1.5rem] p-5 md:p-6 transition-all duration-300 relative overflow-hidden group border ${
+        isPlaying 
+          ? 'bg-[#FDE047] backdrop-blur-md border-white shadow-[0_0_20px_rgba(253,224,71,0.5)] scale-[1.02]' 
+          : 'bg-[#FDE047]/90 backdrop-blur-sm border-[#D4AF37]/50 hover:bg-[#FDE047] shadow-lg shadow-black/10 hover:shadow-xl hover:-translate-y-1'
       }`}
     >
+      {/* Background Progress Bar */}
+      <div 
+        className="absolute top-0 right-0 h-full bg-gradient-to-l from-[#D4AF37]/40 to-transparent transition-all duration-100 ease-linear pointer-events-none"
+        style={{ width: `${progress}%` }}
+      />
+      
       <div className="flex items-center justify-between relative z-10 gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-1">
           <button 
             onClick={togglePlay}
-            className="w-12 h-12 rounded-full bg-black/10 flex items-center justify-center hover:bg-black/20 transition-colors"
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm z-20 shrink-0 ${
+              isPlaying 
+                ? 'bg-lilac-900 text-white shadow-lilac-900/50 scale-105' 
+                : 'bg-white/40 text-lilac-900 hover:bg-lilac-900 hover:text-white group-hover:scale-110'
+            }`}
           >
-            {isPlaying ? <Pause size={20} className="text-black" /> : <Play size={20} className="text-black ml-1" />}
+            {isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-1" />}
           </button>
-          <div className="text-right">
-            <h4 className="font-body font-medium text-lg text-black/80">{title}</h4>
+          <div className="text-right flex-1">
+            <h4 className="font-body font-semibold text-lg md:text-xl text-lilac-900 flex items-center gap-2">
+              <Mic2 className="w-5 h-5 text-lilac-800 opacity-80" />
+              {title}
+            </h4>
+            <div className="flex items-center gap-2 mt-1">
+               <span className="text-lilac-800/80 font-mono text-sm tracking-wider">{duration}</span>
+               {isPlaying && (
+                 <div className="flex items-end gap-1 h-3 ml-2">
+                   <div className="w-1 bg-lilac-800 rounded-full animate-eq-1"></div>
+                   <div className="w-1 bg-lilac-800 rounded-full animate-eq-2"></div>
+                   <div className="w-1 bg-lilac-800 rounded-full animate-eq-3"></div>
+                 </div>
+               )}
+            </div>
           </div>
         </div>
-        <div className="text-black/40 font-mono text-sm">{duration}</div>
       </div>
       <audio 
         ref={audioRef} 
         src={src} 
         preload="none"
-        onEnded={() => setIsPlaying(false)}
+        onEnded={() => { setIsPlaying(false); setProgress(0); }}
         onPause={() => setIsPlaying(false)}
         onPlay={() => setIsPlaying(true)}
+        onTimeUpdate={handleTimeUpdate}
       />
     </div>
   );
